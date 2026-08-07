@@ -1,0 +1,46 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."video-input"]
+  node_bundler = "zisi"
+  timeout = 30
+
+[functions."companion-drift"]
+  schedule = "*/10 * * * *"
+  node_bundler = "esbuild"
+
+[functions."initiative-tagger"]
+  schedule = "0 * * * *"
+  node_bundler = "esbuild"
+
+[functions."idle-cognition-background"]
+  schedule = "0 */8 * * *"
+  node_bundler = "esbuild"
+  timeout = 120
+
+[functions."chat"]
+  timeout = 30
+
+[functions."tts"]
+  timeout = 30
+
+[functions."generate-moment"]
+  timeout = 26
+
+[functions."generate-moment-background"]
+  node_bundler = "zisi"
+  timeout = 900
+
+[functions."memory"]
+  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[dev]
+  port = 8888
+

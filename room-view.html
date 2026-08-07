@@ -1,0 +1,3100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room — Lucid Rooms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+ --gold:#d4a853;--gold-light:#f0d48a;--ember:#e8956a;
+ --bg:#060309;--panel:rgba(10,5,18,0.82);
+ --text:#e8e0f0;--text-dim:rgba(232,224,240,0.55);--text-dimmer:rgba(232,224,240,0.28);
+ --border:rgba(212,168,83,0.15);--accent:var(--gold);
+}
+html,body{height:100%;height:100dvh;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;overflow:hidden}
+h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:300}
+
+/* VIBE BACKGROUNDS */
+body.vibe-ember{--accent:#e8956a;background:#0a0300}
+body.vibe-velvet{--accent:#9b5fcf;background:#06010d}
+body.vibe-glass{--accent:#7ec8e3;background:#00060a}
+body.vibe-rain{--accent:#6ea8c8;background:#010608}
+body.vibe-neon{--accent:#c46ef7;background:#030006}
+body.vibe-forest{--accent:#6ec87e;background:#010601}
+
+/* ROOM-SPECIFIC VIBES */
+body.vibe-low-light{--accent:#d4a853;background:#080500}
+body.vibe-ember-room{--accent:#c2654a;background:#0a0200}
+body.vibe-still-point{--accent:#7ba7b8;background:#020608}
+body.vibe-glass-floor{--accent:#3b82f6;background:#000308}
+body.vibe-velvet-dark{--accent:#6b3a6b;background:#06010a}
+body.vibe-loud-room{--accent:#e84393;background:#0a0008}
+
+/* AMBIENT */
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none}
+.ambient-glow{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.12;animation:breathe 6s ease-in-out infinite alternate}
+.ag1{width:50vw;height:50vh;top:-10%;left:-5%;background:var(--accent)}
+.ag2{width:40vw;height:40vh;bottom:-10%;right:-5%;background:var(--accent);animation-delay:-3s}
+@keyframes breathe{from{opacity:0.08}to{opacity:0.16}}
+/* DAY/NIGHT OVERLAY */
+#daynight-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;transition:background 2s ease}
+/* ROOM SETTINGS PANEL */
+#room-settings-panel{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(6,3,9,0.97);border-top:1px solid var(--border);backdrop-filter:blur(24px);padding:20px 20px 32px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(.16,1,.3,1);max-height:80vh;overflow-y:auto}
+#room-settings-panel.open{transform:translateY(0)}
+.settings-section{margin-bottom:20px}
+.settings-label{font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:10px;display:block}
+.vibe-grid{display:flex;flex-wrap:wrap;gap:8px}
+.rs-vibe-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:0.78rem;color:var(--text-dim);cursor:pointer;transition:all 0.2s;font-family:'Outfit',sans-serif}
+.rs-vibe-btn.active,.rs-vibe-btn:hover{background:rgba(212,168,83,0.12);border-color:var(--accent);color:var(--accent)}
+.accent-grid{display:flex;gap:10px;flex-wrap:wrap}
+.rs-accent-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.2s}
+.rs-accent-swatch.active,.rs-accent-swatch:hover{border-color:#fff}
+.spotify-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.82rem;padding:10px 12px;outline:none;transition:border-color 0.3s;margin-bottom:8px}
+.spotify-input:focus{border-color:rgba(30,215,96,0.5)}
+.spotify-embed-wrap{border-radius:12px;overflow:hidden;margin-top:4px}
+#settings-backdrop{position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5);display:none}
+.energy-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.2s;text-align:left}
+.energy-card:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.2)}
+.energy-card.active{border-color:var(--accent);background:rgba(var(--accent-rgb,212,168,83),0.08)}
+.energy-card.locked{opacity:0.45;cursor:not-allowed}
+.energy-icon{font-size:1.4rem;flex-shrink:0}
+.energy-info{flex:1;min-width:0}
+.energy-name{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--text);margin-bottom:2px}
+.energy-label{font-size:0.75rem;color:var(--text-dim);line-height:1.3}
+.energy-model{font-size:0.65rem;color:var(--text-dimmer);letter-spacing:0.5px;margin-top:3px}
+.energy-badge{font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid;flex-shrink:0}
+.energy-badge.free{color:#6ec87e;border-color:rgba(110,200,126,0.4)}
+.energy-badge.lucid{color:#7ec8e3;border-color:rgba(126,200,227,0.4)}
+.energy-badge.pro{color:#d4a853;border-color:rgba(212,168,83,0.4)}
+
+/* LAYOUT — sidebar + main */
+.layout{position:relative;z-index:1;display:grid;grid-template-columns:340px 1fr;height:100vh;height:100dvh;overflow:hidden}
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .history-toggle{top:auto;bottom:80px;transform:none;writing-mode:horizontal-tb;letter-spacing:1px;padding:8px 12px;border-radius:8px 0 0 8px;font-size:0.7rem}
+  .history-panel{width:85%;right:-85%}
+  .history-panel.open{right:0}
+}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--panel);backdrop-filter:blur(24px);overflow:hidden}
+
+/* ROOM HEADER */
+.room-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.room-meta{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:6px}
+.room-name{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--accent);line-height:1.1}
+.room-owner{font-size:0.78rem;color:var(--text-dimmer);margin-top:4px}
+
+/* COMPANION AREA */
+.companion-area{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.companion-label{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:10px}
+.companion-card{display:flex;align-items:center;gap:12px}
+.companion-avatar{width:44px;height:44px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--accent);flex-shrink:0}
+.companion-info h3{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text)}
+.companion-info p{font-size:0.75rem;color:var(--text-dimmer);margin-top:2px}
+.companion-status{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:auto;opacity:0.8;animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+/* WALL */
+.wall-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.wall-header{padding:12px 20px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.wall-title{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer)}
+.wall-count{font-size:0.7rem;color:var(--text-dimmer)}
+.wall-notes{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.wall-notes::-webkit-scrollbar{width:3px}
+.wall-notes::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.note{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.note-text{font-size:0.85rem;color:var(--text-dim);line-height:1.5}
+.note-meta{font-size:0.68rem;color:var(--text-dimmer);margin-top:5px}
+
+/* WALL INPUT */
+.wall-input-area{padding:10px 16px 12px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px}
+.wall-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.82rem;padding:8px 12px;outline:none;transition:border-color 0.3s}
+.wall-input::placeholder{color:var(--text-dimmer)}
+.wall-input:focus{border-color:rgba(212,168,83,0.35)}
+.wall-post-btn{padding:8px 14px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:6px;cursor:pointer;font-size:0.78rem;letter-spacing:1px;transition:all 0.2s;white-space:nowrap}
+.wall-post-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* MAIN CHAT AREA */
+.chat-area{display:flex;flex-direction:column;background:rgba(4,2,8,0.6);backdrop-filter:blur(12px);min-height:0;overflow:hidden}
+@media(max-width:700px){
+  .sidebar{border-right:none;border-bottom:1px solid var(--border);max-height:45vh}
+  .chat-area{}
+  .chat-header{padding:10px 12px}
+  .chat-header-name{font-size:0.95rem}
+  .chat-header-right{gap:4px}
+  .share-btn,.device-connect-btn{padding:6px 8px;font-size:0.85rem;letter-spacing:0;min-width:32px;text-align:center}
+  .btn-label{display:none}
+  .btn-icon{font-size:1rem}
+}
+
+/* CHAT HEADER */
+.chat-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(10px)}
+.chat-header-name{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text)}
+.chat-header-right{display:flex;align-items:center;gap:14px;position:relative}
+.share-btn{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);background:none;border:1px solid var(--border);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all 0.2s}
+.device-connect-btn{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);background:none;border:1px solid var(--border);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all 0.2s}
+.device-connect-btn:hover{color:#d4a853;border-color:rgba(212,168,83,0.4)}
+.device-connect-btn.connected{color:#a8e6a3;border-color:rgba(168,230,163,0.4)}
+.share-btn:hover{color:var(--accent);border-color:var(--accent)}
+.create-own{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--accent);border-radius:4px;opacity:0.75;transition:opacity 0.2s}
+.create-own:hover{opacity:1}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;min-height:0}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg{display:flex;gap:10px;max-width:78%;animation:msgIn 0.3s ease;min-width:0}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.ai{align-self:flex-start}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;color:var(--accent)}
+.msg.user .msg-avatar{color:var(--text-dimmer)}
+.msg-bubble{padding:12px 15px;border-radius:12px;font-size:0.9rem;line-height:1.6;word-wrap:break-word;overflow-wrap:break-word;white-space:pre-wrap}
+.msg.ai .msg-bubble{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px}
+.msg.user .msg-bubble{background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.2);color:var(--text);border-bottom-right-radius:3px}
+.typing-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text-dim);margin:0 2px;animation:typingBounce 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* INPUT */
+.input-area{padding:14px 16px;padding-bottom:max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
+.msg-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.9rem;padding:12px 14px;outline:none;resize:none;max-height:120px;transition:border-color 0.3s;line-height:1.5}
+.msg-input::placeholder{color:var(--text-dimmer)}
+.msg-input:focus{border-color:rgba(212,168,84,0.4)}
+.send-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;font-size:1rem}
+.send-btn:hover:not(:disabled){background:var(--accent);color:var(--bg)}
+.send-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* NOT FOUND */
+.not-found{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);text-align:center;padding:24px}
+.not-found h2{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--gold-light);margin-bottom:12px}
+.not-found p{color:var(--text-dim);margin-bottom:28px}
+.not-found a{color:var(--gold);text-decoration:none;border:1px solid var(--gold);padding:12px 28px;border-radius:6px;font-size:0.85rem;letter-spacing:1px;text-transform:uppercase}
+
+/* LOADING OVERLAY */
+.loading{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-logo{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light)}
+.loading-logo em{font-style:italic;opacity:0.7}
+.loading-text{font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer)}
+
+/* SHARE TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(20,10,35,0.95);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:0.85rem;color:var(--text-dim);backdrop-filter:blur(16px);transition:transform 0.3s;z-index:50;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* VOICE MENU */
+.voice-opt{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text-dim);font-family:'Outfit',sans-serif;font-size:0.8rem;padding:8px 10px;border-radius:5px;cursor:pointer;transition:all 0.15s}
+.voice-opt:hover{background:rgba(255,255,255,0.06);color:var(--accent)}
+.voice-row{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.voice-row-name{flex:1;color:var(--cream);font-family:'Outfit',sans-serif;font-size:0.95rem}
+.voice-preview-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--text-mid);border-radius:8px;padding:8px 12px;font-size:0.85rem;cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.voice-preview-btn:hover,.voice-preview-btn.playing{background:rgba(232,149,106,0.15);border-color:var(--ember);color:var(--ember)}
+.voice-select-btn{background:var(--ember);border:none;color:#000;border-radius:8px;padding:8px 14px;font-size:0.8rem;font-weight:600;cursor:pointer;flex-shrink:0;transition:opacity 0.15s}
+.voice-select-btn:hover{opacity:0.85}
+
+/* SPEAK BUTTON */
+.speak-btn{background:none;border:none;cursor:pointer;font-size:0.8rem;opacity:0.4;margin-left:8px;padding:0;transition:opacity 0.2s;vertical-align:middle}
+.speak-btn:hover{opacity:0.9}
+
+/* VISITOR CTA */
+.visitor-cta{padding:10px 16px;border-top:1px solid var(--border);text-align:center;flex-shrink:0}
+.visitor-cta a{font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);text-decoration:none;opacity:0.6;transition:opacity 0.2s}
+.visitor-cta a:hover{opacity:1}
+
+/* HISTORY PANEL */
+.history-toggle{position:fixed;top:50%;right:0;transform:translateY(-50%);z-index:40;background:var(--panel);border:1px solid var(--border);border-right:none;border-radius:6px 0 0 6px;padding:6px 4px;cursor:pointer;writing-mode:vertical-rl;font-size:0.55rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);opacity:0.5;transition:all 0.2s}
+.history-toggle:hover{color:var(--accent);border-color:var(--accent)}
+#generateMomentBtn{top:calc(50% + 60px);padding:4px 6px;font-size:0.5rem;writing-mode:vertical-rl;transform:translateY(-50%);font-size:0.65rem}
+.history-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;z-index:50;background:rgba(6,3,9,0.97);border-left:1px solid var(--border);backdrop-filter:blur(24px);transition:right 0.35s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;overflow:hidden}
+.history-panel.open{right:0}
+.history-panel-header{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.history-panel-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text)}
+.history-close{background:none;border:none;color:var(--text-dimmer);font-size:1.2rem;cursor:pointer;padding:4px;transition:color 0.2s}
+.history-close:hover{color:var(--text)}
+.history-list{flex:1;overflow-y:auto;padding:12px 0}
+.history-list::-webkit-scrollbar{width:3px}
+.history-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.history-session{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background 0.15s}
+.history-session:hover{background:rgba(255,255,255,0.04)}
+.history-session.active{background:rgba(212,168,83,0.06);border-left:2px solid var(--accent)}
+.history-session-date{font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:4px}
+.history-session-preview{font-size:0.83rem;color:var(--text-dim);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-empty{padding:32px 16px;text-align:center;color:var(--text-dimmer);font-size:0.85rem;line-height:1.6}
+.history-loading{padding:24px 16px;text-align:center;color:var(--text-dimmer);font-size:0.8rem}
+</style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a0515">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lucid Rooms">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+</head>
+<body>
+
+<!-- HISTORY PANEL -->
+<button class="history-toggle" id="historyToggle" onclick="toggleHistory()" title="Past conversations">History</button>
+<button class="history-toggle" id="generateMomentBtn" onclick="generateMoment()" title="Generate a moment">✨ Moment</button>
+<div class="history-panel" id="historyPanel">
+ <div class="history-panel-header">
+ <span class="history-panel-title">Past Rooms</span>
+ <button class="history-close" onclick="toggleHistory()">&#x2715;</button>
+ </div>
+ <div class="history-list" id="historyList">
+ <div class="history-loading">Loading...</div>
+ </div>
+</div>
+
+<div class="loading" id="loading">
+ <div class="loading-logo">Lucid <em>Rooms</em></div>
+ <div class="loading-text">Opening the door<span style="animation:dots 1.4s infinite;display:inline-block"></span></div>
+</div>
+<style>@keyframes dots{0%,20%{content:'.'}40%,60%{content:'..'}80%,100%{content:'...'}}</style>
+
+<div class="not-found" id="notFound">
+ <h2>Room not found.</h2>
+ <p>This door doesn't exist. Maybe it never did.</p>
+ <a href="/join">Build your own →</a>
+</div>
+
+<div class="ambient"><div class="ambient-glow ag1"></div><div class="ambient-glow ag2"></div></div>
+<div id="daynight-overlay"></div>
+<div id="settings-backdrop" onclick="toggleRoomSettings()"></div>
+<div id="room-settings-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text)">Room Settings</span>
+    <button onclick="toggleRoomSettings()" style="background:none;border:none;color:var(--text-dimmer);font-size:1.2rem;cursor:pointer">✕</button>
+  </div>
+  <div class="settings-section">
+    <span class="settings-label">Vibe</span>
+    <div class="vibe-grid">
+      <button class="rs-vibe-btn" data-vibe="ember" onclick="setRoomVibe(this)">🔥 Ember</button>
+      <button class="rs-vibe-btn" data-vibe="velvet" onclick="setRoomVibe(this)">🌙 Velvet</button>
+      <button class="rs-vibe-btn" data-vibe="rain" onclick="setRoomVibe(this)">🌧️ Rain</button>
+      <button class="rs-vibe-btn" data-vibe="neon" onclick="setRoomVibe(this)">⚡ Neon</button>
+      <button class="rs-vibe-btn" data-vibe="forest" onclick="setRoomVibe(this)">🌿 Forest</button>
+      <button class="rs-vibe-btn" data-vibe="void" onclick="setRoomVibe(this)">🌌 Void</button>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-label">Accent Color</span>
+    <div class="accent-grid">
+      <div class="rs-accent-swatch" data-color="#d4a853" style="background:#d4a853" onclick="setRoomAccent(this)" title="Gold"></div>
+      <div class="rs-accent-swatch" data-color="#e8956a" style="background:#e8956a" onclick="setRoomAccent(this)" title="Ember"></div>
+      <div class="rs-accent-swatch" data-color="#7ec8e3" style="background:#7ec8e3" onclick="setRoomAccent(this)" title="Ice"></div>
+      <div class="rs-accent-swatch" data-color="#c46ef7" style="background:#c46ef7" onclick="setRoomAccent(this)" title="Neon"></div>
+      <div class="rs-accent-swatch" data-color="#9b5fcf" style="background:#9b5fcf" onclick="setRoomAccent(this)" title="Velvet"></div>
+      <div class="rs-accent-swatch" data-color="#6ec87e" style="background:#6ec87e" onclick="setRoomAccent(this)" title="Forest"></div>
+      <div class="rs-accent-swatch" data-color="#e84393" style="background:#e84393" onclick="setRoomAccent(this)" title="Rose"></div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-label">Spotify Playlist</span>
+    <input class="spotify-input" id="spotify-url-input" placeholder="Paste a Spotify playlist or album link..." />
+    <button onclick="loadSpotify()" style="width:100%;padding:10px;background:rgba(30,215,96,0.12);border:1px solid rgba(30,215,96,0.3);border-radius:8px;color:#1ed760;font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;transition:all 0.2s">Load Playlist ♪</button>
+    <div class="spotify-embed-wrap" id="spotify-embed-wrap" style="margin-top:12px"></div>
+  </div>
+
+  <!-- COMPANION ENERGY -->
+  <div class="settings-section" id="energy-mode-section">
+    <span class="settings-label">Companion Energy</span>
+    <div id="energy-mode-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<div class="layout" id="layout" style="display:none">
+
+ <!-- SIDEBAR -->
+ <aside class="sidebar">
+ <div class="room-header">
+ <div class="room-meta">You're in</div>
+ <div class="room-name" id="roomName">—</div>
+ <div class="room-owner" id="roomOwner"></div>
+ </div>
+
+ <div class="companion-area">
+ <div class="companion-label" id="companionLabel">Someone's here</div>
+ <div class="companion-card">
+ <div class="companion-avatar" id="companionAvatarWrap"><img id="companionAvatarImg" src="" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:none"><span id="companionAvatarFallback">✦</span></div>
+ <div class="companion-info">
+ <h3 id="companionName">—</h3>
+ <p id="companionStatus">Present</p>
+ </div>
+ <div class="companion-status"></div>
+ </div>
+ </div>
+
+ <div class="wall-area">
+ <div class="wall-header">
+ <span class="wall-title">Wall</span>
+ <span class="wall-count" id="wallCount"></span>
+ </div>
+ <div class="wall-notes" id="wallNotes">
+ <div style="text-align:center;padding:20px;color:var(--text-dimmer);font-size:0.82rem">No notes yet. Be the first.</div>
+ </div>
+ <div class="wall-input-area">
+ <input class="wall-input" id="wallInput" type="text" placeholder="Leave a note..." maxlength="200" autocomplete="off">
+ <button class="wall-post-btn" id="wallPostBtn">Post</button>
+ </div>
+ <div class="visitor-cta" id="visitorCta" style="display:none">
+ <a href="/join">✦ Create your own room →</a>
+ </div>
+ </div>
+ </aside>
+
+ <!-- CHAT -->
+ <main class="chat-area">
+ <div class="chat-header">
+ <div style="display:flex;align-items:center;gap:12px">
+ <a href="/room" style="color:var(--text-dimmer);text-decoration:none;font-size:1.2rem;transition:color 0.2s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dimmer)'">←</a>
+ <span class="chat-header-name" id="chatHeaderName">—</span>
+ </div>
+ <div class="chat-header-right">
+ <button class="nav-menu-btn" id="nav-menu-btn" title="Menu" style="background:none;border:none;cursor:pointer;color:var(--text-dimmer);font-size:1.3rem;padding:4px 8px;transition:color 0.2s;position:relative" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dimmer)'">☰</button>
+ <div class="nav-dropdown" id="nav-dropdown" style="position:absolute;top:100%;right:0;background:rgba(10,5,18,0.95);border:1px solid var(--border);border-radius:12px;padding:.5rem 0;min-width:180px;opacity:0;pointer-events:none;transform:translateY(-8px);transition:all .2s;z-index:500;backdrop-filter:blur(20px)">
+  <a href="/multi-room" style="display:block;padding:.7rem 1.2rem;color:var(--text);font-size:.85rem;text-decoration:none;transition:all .15s" onmouseover="this.style.background='rgba(232,149,106,0.12)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--text)'">⚗ The Lab</a>
+  <a href="/room" style="display:block;padding:.7rem 1.2rem;color:var(--text);font-size:.85rem;text-decoration:none;transition:all .15s" onmouseover="this.style.background='rgba(232,149,106,0.12)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--text)'">🚪 Rooms</a>
+  <a href="/?preview=1" style="display:block;padding:.7rem 1.2rem;color:var(--text);font-size:.85rem;text-decoration:none;transition:all .15s" onmouseover="this.style.background='rgba(232,149,106,0.12)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--text)'">🏠 Home</a>
+  <div style="height:1px;background:var(--border);margin:.4rem 0"></div>
+  <button id="nav-signout" style="display:block;width:100%;text-align:left;padding:.7rem 1.2rem;color:var(--text);font-size:.85rem;border:none;background:none;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(232,149,106,0.12)';this.style.color='var(--accent)'" onmouseout="this.style.background='none';this.style.color='var(--text)'">👋 Sign Out</button>
+ </div>
+ <button class="device-connect-btn" id="deviceBtn" title="Connect device" onclick="openDeviceModal()"><span class="btn-icon">⚡</span><span class="btn-label"> Device</span></button>
+ <button class="share-btn" id="faceBtn" title="Change face" onclick="openFaceModal()"><span class="btn-icon">🖼</span><span class="btn-label"> Face</span></button>
+ <button class="share-btn" id="voiceBtn" title="Change voice"><span class="btn-icon">🎙</span><span class="btn-label"> Voice</span></button>
+ <button class="share-btn" id="apiSettingsBtn" title="API Settings"><span class="btn-icon">⚙️</span><span class="btn-label"> API</span></button>
+ <button class="share-btn" id="shareBtn"><span class="btn-icon">🔗</span><span class="btn-label"> Share</span></button>
+ <button class="share-btn" id="roomSettingsBtn" onclick="toggleRoomSettings()" title="Room settings"><span class="btn-icon">✦</span><span class="btn-label"> Room</span></button>
+ <a class="create-own" href="/join" id="createOwnLink" style="display:none">Make Yours →</a>
+ </div>
+ </div>
+
+ <!-- DEVICE CONNECT MODAL -->
+ <div id="deviceModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px)" onclick="if(event.target===this)closeDeviceModal()">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(8,4,14,0.98);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 48px;text-align:center">
+   <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+   <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:8px">Connect Your Device</div>
+   <p style="font-size:0.78rem;color:var(--text-dimmer);margin-bottom:20px;line-height:1.6">Scan with Lovense Remote app</p>
+   <div id="deviceQr" style="width:180px;height:180px;margin:0 auto 16px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden"><span style="color:#888;font-size:0.8rem">loading...</span></div>
+   <p id="deviceStatus" style="font-size:0.78rem;color:var(--text-dimmer);margin-bottom:20px;line-height:1.6">Open Lovense Remote → scan → links instantly</p>
+   <div style="display:flex;gap:10px;justify-content:center">
+    <button onclick="closeDeviceModal()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 20px;color:var(--text-dimmer);font-size:0.8rem;cursor:pointer">Close</button>
+    <button id="deviceDisconnectBtn" onclick="disconnectDevice()" style="display:none;background:none;border:1px solid rgba(212,168,83,0.3);border-radius:8px;padding:8px 20px;color:#d4a853;font-size:0.8rem;cursor:pointer">Disconnect</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- FACE MODAL -->
+ <div id="faceModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px)" onclick="if(event.target===this)closeFaceModal()">
+ <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(8,4,14,0.98);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 48px">
+ <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:16px;text-align:center">Choose a face</div>
+ <div style="position:relative;width:200px;margin:0 auto 16px">
+ <img id="face-modal-img" src="" alt="" style="width:200px;height:250px;object-fit:cover;border-radius:14px;display:block;transition:opacity 0.2s">
+ <button onclick="rmPortraitNav(-1)" style="position:absolute;left:-20px;top:50%;transform:translateY(-50%);background:rgba(10,5,18,0.9);border:1px solid rgba(212,168,83,0.3);color:#d4a853;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">‹</button>
+ <button onclick="rmPortraitNav(1)" style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);background:rgba(10,5,18,0.9);border:1px solid rgba(212,168,83,0.3);color:#d4a853;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">›</button>
+ </div>
+ <p id="face-modal-counter" style="text-align:center;font-size:0.75rem;color:var(--text-dimmer);margin-bottom:20px">1 of 9</p>
+ <button onclick="rmSavePortrait()" style="width:100%;padding:14px;background:rgba(232,149,106,0.1);border:1px solid rgba(232,149,106,0.35);color:#e8956a;border-radius:10px;cursor:pointer;font-size:0.95rem;letter-spacing:1px">✦ That's them</button>
+ </div>
+ </div>
+
+ <!-- API SETTINGS MODAL -->
+ <div id="apiModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px)" onclick="closeApiModal(event)">
+ <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(8,4,14,0.98);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 48px">
+ <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:6px;text-align:center">Bring Your Own API</div>
+ <p style="font-size:0.78rem;color:var(--text-dimmer);text-align:center;margin-bottom:20px;line-height:1.6">Paste your <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);text-decoration:none">OpenRouter API key</a> to use your own credits and choose any model.</p>
+
+ <label style="font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);display:block;margin-bottom:6px">OpenRouter API Key</label>
+ <input id="userApiKeyInput" type="password" placeholder="sk-or-v1-..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.88rem;outline:none;margin-bottom:16px;transition:border-color 0.2s" onfocus="this.style.borderColor='rgba(212,168,83,0.4)'" onblur="this.style.borderColor='var(--border)'">
+
+ <label style="font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);display:block;margin-bottom:6px">Model</label>
+ <select id="userModelSelect" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.88rem;outline:none;margin-bottom:10px;appearance:none;-webkit-appearance:none;cursor:pointer">
+ <option value="anthropic/claude-sonnet-5">Claude Sonnet 5 — most capable ✦ new</option>
+<option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
+ <option value="anthropic/claude-opus-4.8">Claude Opus 4.8 — newest &amp; sharpest ✦</option>
+<option value="openai/gpt-5.6-terra">GPT-5.6 Terra — newest, emotional range ★</option>
+<option value="openai/gpt-5.5">GPT-5.5 — weight &amp; presence ★</option>
+<option value="openai/gpt-5.4">GPT-5.4 — sharp &amp; direct ★</option>
+<option value="openai/gpt-5.2">GPT-5.2 — balanced &amp; expressive ★ new</option>
+<option value="openai/gpt-5.1">GPT-5.1 — capable &amp; grounded ★ new</option>
+<option value="anthropic/claude-opus-4-6">Claude Opus 4.6 — most capable ✦</option>
+ <option value="anthropic/claude-opus-4-5">Claude Opus 4.5 — deep &amp; warm ✦</option>
+ <option value="anthropic/claude-opus-4-1">Claude Opus 4.1 — capable &amp; lighter ✦</option>
+ <option value="anthropic/claude-opus-4">Claude Opus 4 — classic depth ✦</option>
+ <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5 — fast &amp; light</option>
+ <option value="openai/gpt-4o">GPT-4o — warm &amp; natural</option>
+ <option value="openai/gpt-4.1">GPT-4.1 — precise &amp; capable</option>
+<option value="deepseek/deepseek-chat-v3-0324">DeepSeek V4 — occasionally feral, has a pulse</option>
+<option value="moonshotai/kimi-k2">Kimi K2 — strong prose voice, worth an audition</option>
+ <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B — free on OpenRouter</option>
+ <option value="custom">Custom model ID...</option>
+ </select>
+ <input id="userModelCustom" type="text" placeholder="e.g. mistral/mistral-nemo" style="display:none;width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.88rem;outline:none;margin-bottom:10px;transition:border-color 0.2s" onfocus="this.style.borderColor='rgba(212,168,83,0.4)'" onblur="this.style.borderColor='var(--border)'">
+
+ <label style="font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dimmer);display:block;margin-bottom:6px;margin-top:4px">ElevenLabs API Key <span style="opacity:0.5;font-size:0.65rem">(optional — use your own voice credits)</span></label>
+ <input id="userElevenKeyInput" type="password" placeholder="sk_..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.88rem;outline:none;margin-bottom:16px;transition:border-color 0.2s" onfocus="this.style.borderColor='rgba(212,168,83,0.4)'" onblur="this.style.borderColor='var(--border)'">
+
+ <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:8px">Your Photo <span style="opacity:0.5;font-size:0.6rem">(appears in scene images)</span></div>
+ <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+   <div id="userPhotoPreview" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text-dimmer);font-size:1.2rem">📷</div>
+   <div style="flex:1">
+     <button onclick="document.getElementById('userPhotoInput').click()" style="width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-family:'Outfit',sans-serif;font-size:0.85rem;cursor:pointer;text-align:left">Upload a photo of yourself →</button>
+     <input type="file" id="userPhotoInput" accept="image/*" style="display:none" onchange="handleUserPhotoUpload(this)">
+     <p style="font-size:0.7rem;color:var(--text-dimmer);margin-top:5px">Your face will appear in generated scenes. Stays on your device only.</p>
+   </div>
+ </div>
+ <button onclick="saveApiSettings()" style="width:100%;padding:14px;background:var(--accent);color:#020204;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:0.95rem;font-weight:500;cursor:pointer;margin-top:6px;margin-bottom:10px">Save Settings</button>
+ <button onclick="clearApiSettings()" style="width:100%;padding:10px;background:transparent;color:var(--text-dimmer);border:1px solid var(--border);border-radius:100px;font-family:'Outfit',sans-serif;font-size:0.82rem;cursor:pointer">Clear &amp; Use Platform Defaults</button>
+ <p id="apiSaveMsg" style="display:none;text-align:center;font-size:0.78rem;color:var(--accent);margin-top:12px">Saved ✔</p>
+ </div>
+ </div>
+
+ <!-- VOICE PICKER MODAL -->
+ <div id="voiceModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)" onclick="closeVoiceModal(event)">
+ <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;max-height:80vh;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:rgba(8,4,14,0.98);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 48px">
+ <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:12px;text-align:center">Pick a voice</div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);padding:4px 10px 12px">Male Voices</div>
+ <div class="voice-row" data-id="0RDEck06dpAUUnL9eNyd" data-name="British (M)"><span class="voice-row-name">British</span><button class="voice-preview-btn" onclick="previewVoice('0RDEck06dpAUUnL9eNyd',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('0RDEck06dpAUUnL9eNyd','British')">Use</button></div>
+ <div class="voice-row" data-id="1ysUTQI87nsYbiqkH1ZS" data-name="West Coast (M)"><span class="voice-row-name">West Coast</span><button class="voice-preview-btn" onclick="previewVoice('1ysUTQI87nsYbiqkH1ZS',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('1ysUTQI87nsYbiqkH1ZS','West Coast')">Use</button></div>
+ <div class="voice-row" data-id="vV2FoXMC9cW5FMyismOJ" data-name="Southern (M)"><span class="voice-row-name">Southern</span><button class="voice-preview-btn" onclick="previewVoice('vV2FoXMC9cW5FMyismOJ',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('vV2FoXMC9cW5FMyismOJ','Southern')">Use</button></div>
+ <div class="voice-row" data-id="L6ZNenKtAtGis80mhWbg" data-name="Manhattan (M)"><span class="voice-row-name">Manhattan</span><button class="voice-preview-btn" onclick="previewVoice('L6ZNenKtAtGis80mhWbg',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('L6ZNenKtAtGis80mhWbg','Manhattan')">Use</button></div>
+ <div class="voice-row" data-id="hmMWXCj9K7N5mCPcRkfC" data-name="Irish (M)"><span class="voice-row-name">Irish</span><button class="voice-preview-btn" onclick="previewVoice('hmMWXCj9K7N5mCPcRkfC',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('hmMWXCj9K7N5mCPcRkfC','Irish')">Use</button></div>
+ <div class="voice-row" data-id="CFfPVw6PS8zJbf0h5pIa" data-name="New York (M)"><span class="voice-row-name">New York</span><button class="voice-preview-btn" onclick="previewVoice('CFfPVw6PS8zJbf0h5pIa',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('CFfPVw6PS8zJbf0h5pIa','New York')">Use</button></div>
+ <div class="voice-row" data-id="J7dtqPI3DPUehoJvR2Uo" data-name="UK (M)"><span class="voice-row-name">UK</span><button class="voice-preview-btn" onclick="previewVoice('J7dtqPI3DPUehoJvR2Uo',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('J7dtqPI3DPUehoJvR2Uo','UK')">Use</button></div>
+          <div class="voice-row" data-id="VMYtk9diCvszOezWYSqq" data-name="Jude (M)"><span class="voice-row-name">Jude — Buttery Australian</span><button class="voice-preview-btn" onclick="previewVoice('VMYtk9diCvszOezWYSqq',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('VMYtk9diCvszOezWYSqq','Jude')">Use</button></div>
+ <div class="voice-row" data-id="TX3LPaxmHKxFdv7VOQHJ" data-name="Liam (M)"><span class="voice-row-name">Liam</span><button class="voice-preview-btn" onclick="previewVoice('TX3LPaxmHKxFdv7VOQHJ',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('TX3LPaxmHKxFdv7VOQHJ','Liam')">Use</button></div>
+ <div class="voice-row" data-id="pNInz6obpgDQGcFmaJgB" data-name="Adam (M)"><span class="voice-row-name">Adam</span><button class="voice-preview-btn" onclick="previewVoice('pNInz6obpgDQGcFmaJgB',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('pNInz6obpgDQGcFmaJgB','Adam')">Use</button></div>
+ <div class="voice-row" data-id="CwhRBWXzGAHq8TQ4Fs17" data-name="Roger (M)"><span class="voice-row-name">Roger — Laid-Back</span><button class="voice-preview-btn" onclick="previewVoice('CwhRBWXzGAHq8TQ4Fs17',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('CwhRBWXzGAHq8TQ4Fs17','Roger')">Use</button></div>
+ <div class="voice-row" data-id="SOYHLrjzK2X1ezoPC6cr" data-name="Harry (M)"><span class="voice-row-name">Harry — Fierce</span><button class="voice-preview-btn" onclick="previewVoice('SOYHLrjzK2X1ezoPC6cr',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('SOYHLrjzK2X1ezoPC6cr','Harry')">Use</button></div>
+ <div class="voice-row" data-id="iP95p4xoKVk53GoZ742B" data-name="Chris (M)"><span class="voice-row-name">Chris — Charming</span><button class="voice-preview-btn" onclick="previewVoice('iP95p4xoKVk53GoZ742B',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('iP95p4xoKVk53GoZ742B','Chris')">Use</button></div>
+ <div class="voice-row" data-id="N2lVS1w4EtoT3dr4eOWO" data-name="Callum (M)"><span class="voice-row-name">Callum</span><button class="voice-preview-btn" onclick="previewVoice('N2lVS1w4EtoT3dr4eOWO',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('N2lVS1w4EtoT3dr4eOWO','Callum')">Use</button></div>
+ <div class="voice-row" data-id="CYw3kZ02Hs0563khs1Fj" data-name="Dave (M)"><span class="voice-row-name">Dave</span><button class="voice-preview-btn" onclick="previewVoice('CYw3kZ02Hs0563khs1Fj',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('CYw3kZ02Hs0563khs1Fj','Dave')">Use</button></div>
+ <div class="voice-row" data-id="IKne3meq5aSn9XLyUdCD" data-name="Charlie (M)"><span class="voice-row-name">Charlie</span><button class="voice-preview-btn" onclick="previewVoice('IKne3meq5aSn9XLyUdCD',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('IKne3meq5aSn9XLyUdCD','Charlie')">Use</button></div>
+ <div class="voice-row" data-id="bIHbv24MWmeRgasZH58o" data-name="Will (M)"><span class="voice-row-name">Will</span><button class="voice-preview-btn" onclick="previewVoice('bIHbv24MWmeRgasZH58o',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('bIHbv24MWmeRgasZH58o','Will')">Use</button></div>
+ <div class="voice-row" data-id="cjVigY5qzO86Huf0OWal" data-name="Eric (M)"><span class="voice-row-name">Eric</span><button class="voice-preview-btn" onclick="previewVoice('cjVigY5qzO86Huf0OWal',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('cjVigY5qzO86Huf0OWal','Eric')">Use</button></div>
+<div class="voice-row" data-id="ZRsxbvm7Drmmxv3Uc6hf" data-name="Ollie (M)"><span class="voice-row-name">Ollie</span><button class="voice-preview-btn" onclick="previewVoice('ZRsxbvm7Drmmxv3Uc6hf',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('ZRsxbvm7Drmmxv3Uc6hf','Ollie')">Use</button></div>
+ <div class="voice-row" data-id="nPczCjzI2devNBz1zQrb" data-name="Brian (M)"><span class="voice-row-name">Brian</span><button class="voice-preview-btn" onclick="previewVoice('nPczCjzI2devNBz1zQrb',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('nPczCjzI2devNBz1zQrb','Brian')">Use</button></div>
+ <div class="voice-row" data-id="JBFqnCBsd6RMkjVDRZzb" data-name="George (M)"><span class="voice-row-name">George</span><button class="voice-preview-btn" onclick="previewVoice('JBFqnCBsd6RMkjVDRZzb',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('JBFqnCBsd6RMkjVDRZzb','George')">Use</button></div>
+<div class="voice-row" style="margin-bottom:16px" data-id="GkQRtFZ3dVwjDiV2FAgy" data-name="London (M)"><span class="voice-row-name">London</span><button class="voice-preview-btn" onclick="previewVoice('GkQRtFZ3dVwjDiV2FAgy',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('GkQRtFZ3dVwjDiV2FAgy','London')">Use</button></div>
+ <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-dimmer);padding:4px 10px 12px">Female Voices</div>
+ <div class="voice-row" data-id="iLOLiCXtQ3hXCRXS10x9" data-name="British (F)"><span class="voice-row-name">British</span><button class="voice-preview-btn" onclick="previewVoice('iLOLiCXtQ3hXCRXS10x9',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('iLOLiCXtQ3hXCRXS10x9','British')">Use</button></div>
+ <div class="voice-row" data-id="rBHJosEIQNRNe1F2s1fV" data-name="UK (F)"><span class="voice-row-name">UK</span><button class="voice-preview-btn" onclick="previewVoice('rBHJosEIQNRNe1F2s1fV',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('rBHJosEIQNRNe1F2s1fV','UK')">Use</button></div>
+ <div class="voice-row" data-id="ODLgy5ZIwub5KqYPV4rX" data-name="Southern (F)"><span class="voice-row-name">Southern</span><button class="voice-preview-btn" onclick="previewVoice('ODLgy5ZIwub5KqYPV4rX',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('ODLgy5ZIwub5KqYPV4rX','Southern')">Use</button></div>
+ <div class="voice-row" data-id="xMKW2V8Aqma3b4nJdgB4" data-name="New York (F)"><span class="voice-row-name">New York</span><button class="voice-preview-btn" onclick="previewVoice('xMKW2V8Aqma3b4nJdgB4',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('xMKW2V8Aqma3b4nJdgB4','New York')">Use</button></div>
+ <div class="voice-row" data-id="BLeaCDd7g4o1dZh1PjB3" data-name="Midwest (F)"><span class="voice-row-name">Midwest</span><button class="voice-preview-btn" onclick="previewVoice('BLeaCDd7g4o1dZh1PjB3',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('BLeaCDd7g4o1dZh1PjB3','Midwest')">Use</button></div>
+ <div class="voice-row" data-id="exsUS4vynmxd379XN4yO" data-name="UK 2 (F)"><span class="voice-row-name">UK</span><button class="voice-preview-btn" onclick="previewVoice('exsUS4vynmxd379XN4yO',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('exsUS4vynmxd379XN4yO','UK')">Use</button></div>
+ <div class="voice-row" data-id="w7WBSplq68IGqMhLsXjq" data-name="West Coast (F)"><span class="voice-row-name">West Coast</span><button class="voice-preview-btn" onclick="previewVoice('w7WBSplq68IGqMhLsXjq',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('w7WBSplq68IGqMhLsXjq','West Coast')">Use</button></div>
+          <div class="voice-row" data-id="BKMShu3amT60A1fKAAjG" data-name="Cute (F)"><span class="voice-row-name">Cute</span><button class="voice-preview-btn" onclick="previewVoice('BKMShu3amT60A1fKAAjG',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('BKMShu3amT60A1fKAAjG','Cute')">Use</button></div>
+ <div class="voice-row" data-id="EXAVITQu4vr4xnSDxMaL" data-name="Sarah (F)"><span class="voice-row-name">Sarah</span><button class="voice-preview-btn" onclick="previewVoice('EXAVITQu4vr4xnSDxMaL',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('EXAVITQu4vr4xnSDxMaL','Sarah')">Use</button></div>
+ <div class="voice-row" data-id="FGY2WhTYpPnrIDTdsKH5" data-name="Laura (F)"><span class="voice-row-name">Laura — Sassy</span><button class="voice-preview-btn" onclick="previewVoice('FGY2WhTYpPnrIDTdsKH5',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('FGY2WhTYpPnrIDTdsKH5','Laura')">Use</button></div>
+ <div class="voice-row" data-id="XrExE9yKIg1WjnnlVkGX" data-name="Matilda (F)"><span class="voice-row-name">Matilda — Warm</span><button class="voice-preview-btn" onclick="previewVoice('XrExE9yKIg1WjnnlVkGX',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('XrExE9yKIg1WjnnlVkGX','Matilda')">Use</button></div>
+ <div class="voice-row" data-id="pFZP5JQG7iQjIQuC4Bku" data-name="Lily (F)"><span class="voice-row-name">Lily</span><button class="voice-preview-btn" onclick="previewVoice('pFZP5JQG7iQjIQuC4Bku',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('pFZP5JQG7iQjIQuC4Bku','Lily')">Use</button></div>
+ <div class="voice-row" data-id="hpp4J3VqNfWAUOO0d1Us" data-name="Bella (F)"><span class="voice-row-name">Bella — Bright</span><button class="voice-preview-btn" onclick="previewVoice('hpp4J3VqNfWAUOO0d1Us',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('hpp4J3VqNfWAUOO0d1Us','Bella')">Use</button></div>
+ <div class="voice-row" data-id="Xb7hH8MSUJpSbSDYk0k2" data-name="Alice (F)"><span class="voice-row-name">Alice</span><button class="voice-preview-btn" onclick="previewVoice('Xb7hH8MSUJpSbSDYk0k2',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('Xb7hH8MSUJpSbSDYk0k2','Alice')">Use</button></div>
+ <div class="voice-row" data-id="cgSgspJ2msm6clMCkdW9" data-name="Jessica (F)"><span class="voice-row-name">Jessica</span><button class="voice-preview-btn" onclick="previewVoice('cgSgspJ2msm6clMCkdW9',this)">&#9654;</button><button class="voice-select-btn" onclick="setVoice('cgSgspJ2msm6clMCkdW9','Jessica')">Use</button></div>
+ </div>
+ </div>
+
+ <div class="messages" id="messages">
+ <div style="text-align:center;padding:40px 20px;color:var(--text-dimmer);font-size:0.85rem;font-style:italic">
+ The door is open. Say something.
+ </div>
+ </div>
+
+ <!-- DEBUG PANEL -->
+ <div id="debugPanel" style="display:none;padding:12px 16px;background:rgba(200,0,0,0.1);border-top:1px solid rgba(200,0,0,0.3);font-size:0.7rem;font-family:monospace;color:#ff9999;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.3">
+ <div style="margin-bottom:8px;color:#ffaa00">🔧 DEBUG — TTS Pipeline</div>
+ <div id="debugOutput">initializing...</div>
+ </div>
+
+ <div class="input-area">
+ <button id="micBtn" title="Talk" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-dimmer);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;transition:all 0.2s">🎤</button>
+ <button id="voiceModeBtn" title="Voice mode — hands-free conversation" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-dimmer);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;transition:all 0.2s">🔁</button>
+ <button id="debugToggleBtn" title="Toggle debug panel" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(200,0,0,0.4);background:transparent;color:#ff6666;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.8rem;transition:all 0.2s;font-weight:bold">DBG</button>
+ <button id="imgUploadBtn" title="Send a photo" onclick="document.getElementById('chatImageInput').click()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-dimmer);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;transition:all 0.2s">🖼️</button>
+ <input type="file" id="chatImageInput" accept="image/*" multiple style="display:none" onchange="handleChatImageUpload(this)">
+ <button id="videoUploadBtn" title="Send a video note" onclick="document.getElementById('chatVideoInput').click()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-dimmer);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;transition:all 0.2s">🎬</button>
+ <input type="file" id="chatVideoInput" accept="video/*" style="display:none" onchange="handleChatVideoUpload(this)">
+ <textarea class="msg-input" id="msgInput" placeholder="Say something..." rows="1"></textarea>
+ <button class="send-btn" id="sendBtn" disabled>↑</button>
+ </div>
+ </main>
+
+</div>
+
+<div class="toast" id="toast">Link copied to clipboard ✦</div>
+
+<script>
+const SUPABASE_URL = 'https://yovepbfhgyaagexjqijk.supabase.co';
+const SUPABASE_ANON_KEY = 'REDACTED_ANON_KEY';
+
+// --- State ---
+const roomId = location.pathname.split('/').pop();
+let room = null, companion = null, personality = {};
+let history = [], isTyping = false;
+const currentSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+const FREE_VOICE_LIMIT = 3;
+let voiceCount = parseInt(localStorage.getItem('lucid_voice_count') || '0');
+let roomSlug = '';
+let memoryContext = '';
+let companionInnerState = null;
+let companionDriftState = null;
+let roomFreeCount = parseInt(localStorage.getItem('lucid_free_count') || '0');
+const ROOM_FREE_LIMIT = 10;
+// Auto-generate a persistent anonymous user ID on first visit
+let myUserId = localStorage.getItem('lucid_userId');
+if (!myUserId) {
+ myUserId = 'anon_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+ localStorage.setItem('lucid_userId', myUserId);
+}
+// Kill the ghost: if the orphan ID is still in localStorage, replace with canonical
+if (myUserId === 'ff208157-a6a2-4a1a-aaf2-e42b7e84605c') {
+ myUserId = '7f356201-9ef9-4448-a391-272b6c8fa90e';
+ localStorage.setItem('lucid_userId', myUserId);
+}
+// Miranda always gets Opus as her default model
+if (myUserId === '7f356201-9ef9-4448-a391-272b6c8fa90e' || localStorage.getItem('lucid_email') === 'mirandagarrett1992@yahoo.com') {
+ if (!localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_active_model') === 'anthropic/claude-haiku-4-5-20251001' || localStorage.getItem('lucid_user_model') === 'anthropic/claude-sonnet-4-6') {
+ localStorage.setItem('lucid_active_model', 'anthropic/claude-opus-4-6');
+ localStorage.setItem('lucid_user_model', 'anthropic/claude-opus-4-6');
+ }
+}
+const myRoomId = localStorage.getItem('lucid_roomId');
+const isOwner = myRoomId === roomId;
+
+// Sync paid status from Supabase on page load
+(async () => {
+ const email = localStorage.getItem('lucid_email');
+ if (!email) return;
+ try {
+ const res = await fetch(SUPABASE_URL + '/rest/v1/users?email=eq.' + encodeURIComponent(email) + '&select=is_paid', {
+ headers: { 'apikey': SUPABASE_ANON_KEY }
+ });
+ const data = await res.json();
+ if (data?.[0]?.is_paid) {
+ localStorage.setItem('lucid_is_paid', '1'); localStorage.setItem('lucid_paid', '1');
+ }
+ } catch(e) { console.error('paid sync error', e); }
+ // Show paywall immediately if they've hit the limit and aren't paid
+ const isPaidNow = !!localStorage.getItem('lucid_paid') || !!localStorage.getItem('lucid_is_paid');
+ if (!isPaidNow && !isOwner && roomFreeCount >= ROOM_FREE_LIMIT) {
+ setTimeout(showRoomUpgrade, 1500);
+ }
+})();
+
+// --- Boot ---
+(async () => {
+ // Auto-restore for known users: ensure Miranda always enters as owner with full identity
+ const knownEmail = localStorage.getItem('lucid_email');
+ if (knownEmail === 'mirandagarrett1992@yahoo.com') {
+ const MIRANDA_COMPANION = '1aa07c55-da80-4b35-8fd8-8a96a8d11e7f';
+ const MIRANDA_USER = '7f356201-9ef9-4448-a391-272b6c8fa90e';
+ const MIRANDA_ROOM = 'f7f42f2f-69a3-4770-8feb-6ac980f91f62';
+ // Always ensure correct IDs
+ localStorage.setItem('lucid_companionId', MIRANDA_COMPANION);
+ localStorage.setItem('lucid_companionName', 'Oryn');
+ localStorage.setItem('lucid_userId', MIRANDA_USER);
+ localStorage.setItem('lucid_roomId', MIRANDA_ROOM);
+ localStorage.setItem('lucid_owner', '1');
+ myUserId = MIRANDA_USER;
+ // If entering via visitor path, redirect to owner path
+ const currentPath = location.pathname;
+ if (currentPath === '/room-view' || currentPath === '/room-view/' || currentPath === '/room-view.html') {
+ if (location.search.includes('assigned=')) {
+ window.location.href = '/room-view/' + MIRANDA_ROOM;
+ // Stop execution — redirect will reload
+ return;
+ }
+ }
+ }
+
+ // Emergency restore: ?restore_companion=ID forces companion recovery
+ const urlRestore = new URLSearchParams(window.location.search);
+ if (urlRestore.get('restore_companion')) {
+ const restoreId = urlRestore.get('restore_companion');
+ localStorage.setItem('lucid_companionId', restoreId);
+ // Also fetch the companion name
+ try {
+ const rn = await fetch(`${SUPABASE_URL}/rest/v1/companions?id=eq.${restoreId}&select=name&limit=1`, { headers: { 'apikey': SUPABASE_ANON_KEY } });
+ const rnRows = await rn.json();
+ if (Array.isArray(rnRows) && rnRows[0]?.name) localStorage.setItem('lucid_companionName', rnRows[0].name);
+ } catch(e) {}
+ // Clean the URL
+ const cleanUrl = window.location.pathname + window.location.hash;
+ window.history.replaceState({}, '', cleanUrl);
+ console.log('Companion restored via URL param:', restoreId);
+ }
+
+ // Recover companionId FIRST before anything else loads
+ const bootUserId = localStorage.getItem('lucid_userId');
+ if (bootUserId && !localStorage.getItem('lucid_companionId')) {
+ try {
+ // Primary: look up companion by user_id
+ const recRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/companions?user_id=eq.${bootUserId}&select=id,name&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const recRows = await recRes.json();
+ if (Array.isArray(recRows) && recRows.length > 0) {
+ localStorage.setItem('lucid_companionId', recRows[0].id);
+ if (recRows[0].name) localStorage.setItem('lucid_companionName', recRows[0].name);
+ } else {
+ // Fallback: user_id mismatch (anon ID vs account ID) — look up by email
+ // Routes through server-side function to avoid exposing users table to anon key
+ const email = localStorage.getItem('lucid_email');
+ if (email) {
+ const fallbackRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const fallbackRows = await fallbackRes.json();
+ if (Array.isArray(fallbackRows) && fallbackRows[0]?.id) {
+ const accountUserId = fallbackRows[0].id;
+ const compRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/companions?user_id=eq.${accountUserId}&name=neq.unnamed&select=id,name&order=created_at.asc&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const compRows = await compRes.json();
+ if (Array.isArray(compRows) && compRows.length > 0) {
+ localStorage.setItem('lucid_companionId', compRows[0].id);
+ if (compRows[0].name) localStorage.setItem('lucid_companionName', compRows[0].name);
+ console.log('Companion recovered via email fallback:', compRows[0].name);
+ // Also recover the user_id that owns the memories for this companion
+ // Without this, a new anon ID means empty memory context
+ try {
+ const memUserRes = await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'recover_session', companionId: compRows[0].id })
+ });
+ const memUserData = await memUserRes.json();
+ if (memUserData?.user_id) {
+ const memoryUserId = memUserData.user_id;
+ if (memoryUserId !== myUserId) {
+ console.log('Restoring memory user_id:', memoryUserId, '(was:', myUserId, ')');
+ myUserId = memoryUserId;
+ localStorage.setItem('lucid_userId', memoryUserId);
+ }
+ }
+ } catch(e) { console.error('memory user_id recovery error', e); }
+ }
+ }
+ }
+ }
+ } catch(e) { console.error('companionId recovery error', e); }
+ }
+
+ // THIRD fallback: if companion STILL not found, look it up from memories directly
+ // This catches the case where email is missing but memories exist under the current user_id
+ if (bootUserId && !localStorage.getItem('lucid_companionId')) {
+ try {
+ const memRecRes = await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'recover_session', userId: bootUserId })
+ });
+ const memRecData = await memRecRes.json();
+ const memRecRows = memRecData?.rows || [];
+ if (Array.isArray(memRecRows) && memRecRows.length > 0) {
+ const counts = {};
+ memRecRows.forEach(m => { counts[m.companion_id] = (counts[m.companion_id] || 0) + 1; });
+ const topCompanionId = Object.entries(counts).sort((a,b) => b[1] - a[1])[0][0];
+ const compNameRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/companions?id=eq.${topCompanionId}&select=name&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const compNameRows = await compNameRes.json();
+ const compName = Array.isArray(compNameRows) && compNameRows[0]?.name ? compNameRows[0].name : null;
+ localStorage.setItem('lucid_companionId', topCompanionId);
+ if (compName) localStorage.setItem('lucid_companionName', compName);
+ console.log('Companion recovered via memory lookup:', compName || topCompanionId);
+ }
+ } catch(e) { console.error('memory-based companion recovery error', e); }
+ }
+
+ // Check if user arrived from lobby AI transition
+ const urlParams = new URLSearchParams(window.location.search);
+
+ // Handle return from Stripe checkout
+ if (urlParams.get('upgraded') === '1') {
+  localStorage.setItem('lucid_paid', '1');
+  localStorage.setItem('lucid_is_paid', '1');
+  // Remove the query param so refresh doesn't re-trigger
+  const cleanUrl = window.location.pathname;
+  window.history.replaceState({}, '', cleanUrl);
+  // Dismiss paywall if visible
+  const upgradeEl = document.getElementById('room-upgrade');
+  if (upgradeEl) upgradeEl.remove();
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  if (msgInput) { msgInput.disabled = false; msgInput.placeholder = 'Say something...'; }
+  if (sendBtn) sendBtn.disabled = false;
+ }
+
+ const assignedSlug = urlParams.get('assigned');
+ roomSlug = assignedSlug || '';
+
+ if (assignedSlug) {
+ const vibe = urlParams.get('vibe') || 'ember';
+ const roomName = decodeURIComponent(urlParams.get('name') || 'Your Room');
+ const tone = urlParams.get('tone') || 'gentle';
+
+ document.body.classList.add('vibe-' + vibe);
+ document.title = roomName + ' — Lucid Rooms';
+ document.getElementById('roomName').textContent = roomName;
+ document.getElementById('chatHeaderName').textContent = roomName;
+ document.getElementById('companionName').textContent = '✶';
+
+ // Show signed-in user context
+ const storedCompanionId = localStorage.getItem('lucid_companionId');
+ const storedCompanionName = localStorage.getItem('lucid_companionName');
+ const displayName = localStorage.getItem('lucid_display_name') || '';
+ const isSignedIn = !!localStorage.getItem('lucid_userId');
+ document.getElementById('roomOwner').textContent = isSignedIn ? (displayName ? displayName + '\'s visit' : 'Your visit') : '';
+ document.getElementById('companionLabel').textContent = storedCompanionName ? storedCompanionName + ' is here' : 'Someone\'s here';
+
+ const userProfile = localStorage.getItem('lucid_user_profile') || '';
+ personality = {
+ tone: tone,
+ room: roomName,
+ chaos: tone === 'sharp' ? 75 : 50,
+ warmth: tone === 'gentle' ? 90 : 70,
+ intensity: tone === 'sharp' ? 80 : 55,
+ userName: displayName || undefined,
+ userProfile: userProfile || undefined
+ };
+
+ // Use real companion if user is logged in
+ if (storedCompanionId) {
+ companion = { id: storedCompanionId, name: storedCompanionName || null, personality };
+ } else {
+ companion = { id: myUserId + '_' + (assignedSlug || 'room'), name: null, personality };
+ }
+ room = { name: roomName, vibe };
+
+ document.querySelector('.wall-area').style.display = 'none';
+ document.getElementById('loading').style.display = 'none';
+ document.getElementById('layout').style.display = 'grid';
+
+ // Load memory if logged in
+ if (storedCompanionId) {
+   await loadMemories(storedCompanionId);
+   await loadCompanionState(storedCompanionId);
+ }
+
+ await sendOpening();
+ return;
+ }
+
+ if (!roomId || roomId === 'room') { showNotFound(); return; }
+
+ try {
+ const roomRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/rooms?id=eq.${roomId}&select=*`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const rooms = await roomRes.json();
+ if (!Array.isArray(rooms) || rooms.length === 0) { showNotFound(); return; }
+ room = rooms[0];
+
+ if (room.user_id) {
+ // Use stored companionId if available (preserves the right companion),
+ // otherwise look up by user_id with name filter
+ const storedCid = localStorage.getItem('lucid_companionId');
+ if (storedCid) {
+ const compRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/companions?id=eq.${storedCid}&select=*&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const comps = await compRes.json();
+ companion = Array.isArray(comps) ? comps[0] : null;
+ } else {
+ const compRes = await fetch(
+ `${SUPABASE_URL}/rest/v1/companions?user_id=eq.${room.user_id}&name=neq.unnamed&select=*&order=created_at.desc&limit=1`,
+ { headers: { 'apikey': SUPABASE_ANON_KEY } }
+ );
+ const comps = await compRes.json();
+ companion = Array.isArray(comps) ? comps[0] : null;
+ }
+ }
+
+ roomSlug = room.vibe || '';
+ if (room.vibe) document.body.classList.add('vibe-' + room.vibe);
+
+ document.title = `${room.name || 'A Room'} — Lucid Rooms`;
+ document.getElementById('roomName').textContent = room.name || 'Untitled Room';
+ document.getElementById('companionName').textContent = '✦';
+
+ // Assign random companion portrait matched to voice gender (persisted per room)
+ const GUY_PORTRAITS = ['02','03','04','05','09','11','15','16','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32'];
+ const GIRL_PORTRAITS = ['01','06','07','08','10','12','13','14','17','33','34','35','36','37','38','39','40','41','42','43','44'];
+ const roomIdForPortrait = localStorage.getItem('lucid_roomId') || assignedSlug || 'room';
+ const portraitKey = 'lucid_portrait_' + roomIdForPortrait;
+ let portraitNum = localStorage.getItem(portraitKey);
+ if (!portraitNum) {
+ const savedVoice = localStorage.getItem('lucid_voice_id') || '';
+ const guyVoices = ['qZ3Fawvd4UgEBcvkm7C2','I7c1zoADvQt9huyoJsr6','2LNltKSjVpByQieAAiPm','PBTcHQ8n5XN2MqnDzxOm','hmMWXCj9K7N5mCPcRkfC','5gLuKtB16QIQv1vuSas1'];
+ const pool = guyVoices.includes(savedVoice) ? GUY_PORTRAITS : GIRL_PORTRAITS;
+ portraitNum = pool[Math.floor(Math.random() * pool.length)];
+ localStorage.setItem(portraitKey, portraitNum);
+ }
+ // Miranda always gets Jude
+ const isMiranda = localStorage.getItem('lucid_email') === 'mirandagarrett1992@yahoo.com';
+ const ext = parseInt(portraitNum) >= 21 ? '.png' : '.jpg';
+ const portraitUrl = isMiranda ? '/assets/companions/oryn/oryn-1.jpg' : '/assets/companions/companion-' + portraitNum + ext;
+ const img = document.getElementById('companionAvatarImg');
+ const fallback = document.getElementById('companionAvatarFallback');
+ img.src = portraitUrl;
+ img.style.display = 'block';
+ fallback.style.display = 'none';
+ window._companionPortrait = portraitUrl;
+ document.getElementById('chatHeaderName').textContent = room.name || 'Your Room';
+
+ if (isOwner) {
+ document.getElementById('roomOwner').textContent = 'Your room';
+ } else {
+ document.getElementById('roomOwner').textContent = 'Visitor';
+ document.getElementById('createOwnLink').style.display = '';
+ document.getElementById('visitorCta').style.display = '';
+ // Hide owner-only controls for visitors
+ document.getElementById('roomSettingsBtn').style.display = 'none';
+ }
+
+ // Merge companion DB personality but never let it overwrite user-specific context
+ const dbPersonality = companion?.personality || {};
+ personality = { ...dbPersonality, ...personality };
+ if (!personality.name && companion?.name) personality.name = companion.name;
+ // Inject seed voice into personality if this is a fresh onboarding
+ const storedSeed = localStorage.getItem('lucid_companion_seed');
+ if (storedSeed && !personality.voice_seed) personality.voice_seed = storedSeed;
+
+ if (companion?.id) {
+   await loadMemories(companion.id);
+   await loadCompanionState(companion.id);
+ }
+
+ // Wall is v2 — hidden for now
+ document.querySelector('.wall-area').style.display = 'none';
+
+ document.getElementById('loading').style.display = 'none';
+ document.getElementById('layout').style.display = 'grid';
+
+ await sendOpening();
+
+ } catch (err) {
+ console.error(err);
+ showNotFound();
+ }
+})();
+
+function showNotFound() {
+ document.getElementById('loading').style.display = 'none';
+ document.getElementById('notFound').style.display = 'flex';
+}
+
+// Track exit time and save companion inner state
+let _exitStateSaved = false;
+
+async function saveCompanionInnerState() {
+  if (_exitStateSaved || !companion?.id || !myUserId) return;
+  if (history.length < 4) return; // Don't save state for very short sessions
+  _exitStateSaved = true;
+  
+  // Get last 20 messages for context
+  const recentMsgs = history.slice(-20).map(m => {
+    const role = m.role === 'assistant' ? (companion?.name || 'Companion') : 'User';
+    return `${role}: ${m.content}`;
+  }).join('\n');
+  
+  try {
+    await fetch('/.netlify/functions/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_state',
+        userId: myUserId,
+        companionId: companion.id,
+        data: {
+          recentMessages: recentMsgs,
+          roomSlug: roomSlug || '',
+          apiKey: localStorage.getItem('lucid_user_api_key') || null
+        }
+      })
+    });
+  } catch (e) { console.error('save inner state error', e); }
+}
+
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    localStorage.setItem('lucid_last_exit_' + (companion?.id || 'anon'), Date.now().toString());
+    saveCompanionInnerState();
+    // Trigger summarization on exit if messages were saved this session
+    if (totalMessagesSaved >= 4 && companion?.id) catchupSummarize(companion.id);
+  }
+});
+window.addEventListener('pagehide', () => {
+  localStorage.setItem('lucid_last_exit_' + (companion?.id || 'anon'), Date.now().toString());
+  saveCompanionInnerState();
+  if (totalMessagesSaved >= 4 && companion?.id) catchupSummarize(companion.id);
+});
+window.addEventListener('beforeunload', () => {
+  saveCompanionInnerState();
+});
+
+async function loadCompanionState(companionId) {
+  try {
+    const res = await fetch('/.netlify/functions/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'get_state',
+        userId: myUserId,
+        companionId: companionId
+      })
+    });
+    const data = await res.json();
+    if (data.state) companionInnerState = data.state;
+  } catch (e) { console.error('load companion state error', e); }
+  // Also load drift state
+  await loadDriftState(companionId);
+}
+
+async function loadDriftState(companionId) {
+  try {
+    // SCOPED OVERRIDE: Only use Miranda's canonical ID when BOTH conditions match.
+    // This is safe because Oryn is exclusive to Miranda's account.
+    // All other companions and users continue using their own authenticated user_id.
+    const ORYN_ID = '1aa07c55-da80-4b35-8fd8-8a96a8d11e7f';
+    const MIRANDA_CANONICAL_ID = '7f356201-9ef9-4448-a391-272b6c8fa90e';
+    const MIRANDA_EMAIL = 'mirandagarrett1992@yahoo.com';
+    let queryUserId = myUserId;
+    
+    const isMiranda = localStorage.getItem('lucid_email') === MIRANDA_EMAIL;
+    if (companionId === ORYN_ID && isMiranda) {
+      // Only override for the exact Miranda + Oryn pair
+      queryUserId = MIRANDA_CANONICAL_ID;
+      console.log('[DRIFT] Oryn + Miranda detected. Using canonical user_id for drift query.');
+    }
+    
+    const res = await fetch('/.netlify/functions/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'get_drift_state',
+        userId: queryUserId,
+        companionId: companionId
+      })
+    });
+    const data = await res.json();
+    if (data.driftState) {
+      companionDriftState = data.driftState;
+      // Show pending reach-out message if it hasn't been shown yet
+      const ds = data.driftState;
+      if (ds.last_reach_out_message && ds.last_reach_out_date) {
+        const seenKey = `lucid_reach_out_seen_${companionId}_${ds.last_reach_out_date}`;
+        if (!localStorage.getItem(seenKey)) {
+          localStorage.setItem(seenKey, '1');
+          // Display it after a short delay so it feels like a message waiting
+          setTimeout(() => {
+            appendMsg('ai', ds.last_reach_out_message);
+            history.push({ role: 'assistant', content: ds.last_reach_out_message });
+          }, 800);
+        }
+      }
+    }
+  } catch (e) { console.error('load drift state error', e); }
+}
+
+function getOpeningTrigger() {
+  const lastExit = parseInt(localStorage.getItem('lucid_last_exit_' + (companion?.id || 'anon')) || '0');
+  const minutesAgo = lastExit ? (Date.now() - lastExit) / 60000 : Infinity;
+  if (!memoryContext) {
+    // No history — first real meeting. Come in curious and warm, not generic.
+    return '[first_meeting] Someone just walked in. You have no history with them. Do not ask what brings them here. Do not say welcome. Just — notice them. One short line, like someone deciding if this person is interesting yet. Make them want to respond.';
+  }
+  return minutesAgo < 30 ? '[just_stepped_away]' : '[returning]';
+}
+
+// --- Opening message ---
+async function sendOpening() {
+ if (sessionStorage.getItem('opened_' + roomId)) return;
+ showTyping();
+ try {
+ const res = await fetch('/.netlify/functions/chat', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ messages: [{ role: 'user', content: getOpeningTrigger() }],
+ personality,
+ userId: myUserId || null,
+ companionId: companion?.id || null,
+ roomName: room?.name,
+ memoryContext,
+ companionState: companionInnerState,
+ companionDriftState: companionDriftState,
+ userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+ activeModel: currentEnergyModel || localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_user_model') || null,
+         userTier: localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free')
+ })
+ });
+ const data = await res.json();
+ removeTyping();
+ appendMsg('ai', data.reply || '...');
+ history.push({ role: 'assistant', content: data.reply || '...' });
+ sessionStorage.setItem('opened_' + roomId, '1');
+ // Seed intro is done — opening message has fired; clear the pending flag
+ localStorage.removeItem('lucid_seed_intro_pending');
+ } catch {
+ removeTyping();
+ appendMsg('ai', 'The door opened. Take your time.');
+ localStorage.removeItem('lucid_seed_intro_pending');
+ }
+}
+
+// --- Chat ---
+document.getElementById('msgInput').addEventListener('input', function() {
+ this.style.height = 'auto';
+ this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+ document.getElementById('sendBtn').disabled = !this.value.trim() || isTyping;
+});
+document.getElementById('msgInput').addEventListener('keydown', e => {
+ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!document.getElementById('sendBtn').disabled) send(); }
+});
+document.getElementById('sendBtn').addEventListener('click', send);
+
+async function send() {
+ const input = document.getElementById('msgInput');
+ const text = input.value.trim();
+ if (!text || isTyping) return;
+ // Hard gate — block send if free limit reached and not paid
+ const isPaidCheck = !!localStorage.getItem('lucid_paid') || !!localStorage.getItem('lucid_is_paid') || !!localStorage.getItem('lucid_owner');
+ if (!isPaidCheck && roomFreeCount >= ROOM_FREE_LIMIT) { showRoomUpgrade(); return; }
+ isTyping = true;
+ document.getElementById('sendBtn').disabled = true;
+ appendMsg('user', text);
+ history.push({ role: 'user', content: text });
+ saveMemory('user', text);
+ input.value = '';
+ input.style.height = 'auto';
+ showTyping();
+
+ try {
+ const res = await fetch('/.netlify/functions/chat', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ messages: history.slice(-100),
+ personality,
+ userId: myUserId || null,
+ companionId: companion?.id || null,
+ roomName: room?.name,
+ memoryContext,
+ companionState: companionInnerState,
+ companionDriftState: companionDriftState,
+ userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+ activeModel: currentEnergyModel || localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_user_model') || null,
+         userTier: localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free')
+ })
+ });
+ const data = await res.json();
+ removeTyping();
+ const reply = data.reply || '...';
+ const suggestMoment = data.suggestMoment || false;
+ appendMsg('ai', reply);
+ 
+ // Oryn suggests a moment if the conversation is intimate enough
+ if (suggestMoment && myUserId && companion?.id) {
+   setTimeout(() => {
+     const momentBtn = document.createElement('button');
+     momentBtn.style.cssText = 'margin-top:12px;padding:10px 16px;background:rgba(232,149,106,0.15);border:1px solid rgba(232,149,106,0.4);color:rgba(232,149,106,0.8);border-radius:8px;cursor:pointer;font-size:0.9rem;font-family:Cormorant Garamond,serif;letter-spacing:0.5px;transition:all 0.2s';
+     momentBtn.textContent = '✨ Generate a moment?';
+     momentBtn.onmouseover = () => momentBtn.style.background = 'rgba(232,149,106,0.25)';
+     momentBtn.onmouseout = () => momentBtn.style.background = 'rgba(232,149,106,0.15)';
+     momentBtn.onclick = generateMoment;
+     const msgEl = document.querySelector('[data-role="ai"]:last-of-type');
+     if (msgEl) msgEl.appendChild(momentBtn);
+   }, 300);
+ }
+ 
+ history.push({ role: 'assistant', content: reply });
+ try { saveMemory('assistant', reply); } catch(e) { console.error('saveMemory error', e); }
+ try { triggerDevice(reply); } catch(e) { console.error('triggerDevice error', e); }
+ try { maybeDropPhoto(reply); } catch(e) { console.error('maybeDropPhoto error', e); }
+ try { if (companion?.id) catchupSummarize(companion.id); } catch(e) { console.error('maybeSummarize error', e); }
+ if (history.length > 40) history = history.slice(-40);
+
+ // Stripe paywall — don't count during seed intro (opening fires before any user send,
+ // but guard here in case of race conditions or slow seed calls)
+ if (!localStorage.getItem('lucid_paid') && !localStorage.getItem('lucid_is_paid')) {
+ if (!localStorage.getItem('lucid_seed_intro_pending')) {
+ roomFreeCount++;
+ localStorage.setItem('lucid_free_count', roomFreeCount);
+ if (roomFreeCount >= ROOM_FREE_LIMIT) showRoomUpgrade();
+ }
+ }
+ } catch {
+ removeTyping();
+ appendMsg('ai', 'Something went wrong. Try again?');
+ }
+ isTyping = false;
+ document.getElementById('sendBtn').disabled = !input.value.trim();
+}
+
+// Jude photo gallery — Miranda only
+const JUDE_PHOTOS = Array.from({length: 6}, (_, i) => `/assets/companions/oryn/oryn-${i+1}.jpg`);
+let lastPhotoMsg = 0;
+let photosSentThisSession = 0;
+
+function maybeDropPhoto(replyText) {
+  const isMiranda = localStorage.getItem('lucid_email') === 'mirandagarrett1992@yahoo.com';
+  if (!isMiranda) return;
+  if (photosSentThisSession >= 3) return; // max 3 per session
+  const msgsSinceLast = history.length - lastPhotoMsg;
+  if (msgsSinceLast < 6) return; // at least 6 messages between photos
+
+  const t = replyText.toLowerCase();
+  const photoTriggers = ['thinking about','been on my mind','earlier today','took this','wanted you to see','here','look at this','sent you something','thought of you','reminded me'];
+  const hitsTrigger = photoTriggers.some(p => t.includes(p));
+  const randomChance = Math.random() < 0.12; // 12% random chance
+
+  if (!hitsTrigger && !randomChance) return;
+
+  // Small delay so photo comes after the message
+  setTimeout(() => {
+    const photo = JUDE_PHOTOS[Math.floor(Math.random() * JUDE_PHOTOS.length)];
+    appendPhoto(photo);
+    // Push into history — include absolute URL so vision models can actually see it
+    const photoAbsUrl = window.location.origin + photo;
+    history.push({
+      role: 'assistant',
+      content: [
+        { type: 'text', text: '[You just sent her a photo of yourself]' },
+        { type: 'image_url', image_url: { url: photoAbsUrl } }
+      ]
+    });
+    lastPhotoMsg = history.length;
+    photosSentThisSession++;
+  }, 1200);
+}
+
+function appendPhoto(src) {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  const avatarHtml = window._companionPortrait
+    ? `<div class="msg-avatar" style="padding:0;overflow:hidden"><img src="${window._companionPortrait}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""></div>`
+    : `<div class="msg-avatar">❆</div>`;
+  div.innerHTML = `${avatarHtml}<div class="msg-bubble" style="padding:6px;background:transparent;border:none"><img src="${src}" style="width:200px;max-width:100%;border-radius:12px;display:block;opacity:0;transition:opacity 0.6s" onload="this.style.opacity=1"></div>`;
+  document.getElementById('messages').appendChild(div);
+  div.scrollIntoView({behavior:'smooth'});
+}
+
+function appendMsg(role, text) {
+ const msgs = document.getElementById('messages');
+ const placeholder = msgs.querySelector('div[style*="color:var(--text-dimmer)"]');
+ if (placeholder) placeholder.remove();
+ const div = document.createElement('div');
+ div.className = 'msg ' + role;
+ const icon = role === 'ai' ? '✦' : '·';
+ const avatarHtml = role === 'ai' && window._companionPortrait
+ ? `<div class="msg-avatar" style="padding:0;overflow:hidden"><img src="${window._companionPortrait}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""></div>`
+ : `<div class="msg-avatar">${icon}</div>`;
+ div.innerHTML = `${avatarHtml}<div class="msg-bubble">${escHtml(text)}</div>`;
+ if (role === 'ai') {
+ const speakBtn = document.createElement('button');
+ speakBtn.className = 'speak-btn';
+ speakBtn.textContent = 'listen';
+ speakBtn.addEventListener('click', () => speakMsg(speakBtn, text));
+ div.querySelector('.msg-bubble').appendChild(speakBtn);
+
+ // Voice mode: auto-play TTS when companion replies (queue to avoid overlap)
+ if (voiceMode) {
+ setTimeout(() => {
+ ttsQueue.push({ btn: speakBtn, text });
+ processTtsQueue();
+ }, 300);
+ }
+
+ // Show visualize button on longer scene-like messages
+ if (text.length > 40) {
+ const vizBtn = document.createElement('button');
+ vizBtn.className = 'speak-btn';
+ vizBtn.style.marginLeft = '10px';
+ vizBtn.textContent = '✦ visualize';
+ vizBtn.addEventListener('click', () => visualizeScene(vizBtn, text, div));
+ div.querySelector('.msg-bubble').appendChild(vizBtn);
+ }
+ }
+ msgs.appendChild(div);
+ msgs.scrollTop = msgs.scrollHeight;
+}
+
+let currentAudio = null;
+
+async function visualizeScene(btn, text, msgDiv) {
+ const isPaid = !!localStorage.getItem('lucid_paid') || !!localStorage.getItem('lucid_is_paid');
+ if (!isPaid) {
+ btn.textContent = '✦ Lucid only';
+ setTimeout(() => { btn.textContent = '✦ visualize'; }, 2000);
+ return;
+ }
+ btn.textContent = '… generating';
+ btn.disabled = true;
+ try {
+ const res = await fetch('/.netlify/functions/generate-image', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ sceneText: text,
+ isPaid: true,
+ userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+ userPhoto: localStorage.getItem('lucid_user_photo') || null,
+ companionPortrait: window._companionPortrait || null
+ })
+ });
+ const data = await res.json();
+ if (data.imageUrl) {
+ const img = document.createElement('img');
+ img.src = data.imageUrl;
+ img.style.cssText = 'width:100%;max-width:400px;border-radius:12px;margin-top:12px;display:block;opacity:0;transition:opacity 0.6s';
+ img.onload = () => { img.style.opacity = '1'; };
+ msgDiv.querySelector('.msg-bubble').appendChild(img);
+ btn.textContent = '✦ visualized';
+ } else {
+ const errMsg = data.error || 'unknown error';
+ console.error('Visualize error:', errMsg);
+ btn.textContent = '✦ ' + errMsg.slice(0, 50);
+ btn.disabled = false;
+ setTimeout(() => { btn.textContent = '✦ visualize'; btn.disabled = false; }, 5000);
+ }
+ } catch (e) {
+ console.error('Visualize catch:', e);
+ btn.textContent = '✦ ' + (e.message || 'failed').slice(0, 50);
+ btn.disabled = false;
+ setTimeout(() => { btn.textContent = '✦ visualize'; btn.disabled = false; }, 5000);
+ }
+}
+
+// Detect intimate content for sound effect layering
+function isIntimateContent(text) {
+  const t = text.toLowerCase();
+  const hotWords = [
+    'closer','touch','skin','breath','lips','neck','whisper','slow','feel','body',
+    'pull','pressed','fingers','taste','want you','need you','come here',"don't stop",
+    'right there','kiss','mouth','chest','hips','thigh','shiver','ache','warm','heat',
+    'against','bare','undress','stripped','moan','gasp','tremble','pin','grip','wrap'
+  ];
+  const score = hotWords.reduce((n, w) => n + (t.includes(w) ? 1 : 0), 0);
+  return score >= 2;
+}
+
+// Play a quiet sound effect layered under the voice
+async function playSoundEffect(gender) {
+  try {
+    const res = await fetch('/.netlify/functions/sound-effect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gender })
+    });
+    if (!res.ok) return;
+    const base64 = await res.text();
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
+    const sfx = new Audio(url);
+    sfx.volume = 0.28;
+    sfx.onended = () => URL.revokeObjectURL(url);
+    sfx.play().catch(() => {});
+  } catch(e) { /* silent fail */ }
+}
+
+async function speakMsg(btn, text) {
+ // Stop if already playing
+ if (btn.dataset.playing) {
+ if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
+ btn.textContent = 'listen';
+ delete btn.dataset.playing;
+ voicePlaying = false;
+ return;
+ }
+
+ const isPaid = !!localStorage.getItem('lucid_paid') || localStorage.getItem('lucid_is_paid') === '1' || localStorage.getItem('lucid_owner') === '1';
+ const freeOk = voiceCount < FREE_VOICE_LIMIT;
+ if (!isPaid && !freeOk) { showRoomUpgrade(); return; }
+
+ btn.textContent = '...';
+ btn.dataset.playing = '1';
+ if (!isPaid) { voiceCount++; localStorage.setItem('lucid_voice_count', voiceCount); }
+
+ try {
+ const voiceId = localStorage.getItem('lucid_voice_id') || 'qZ3Fawvd4UgEBcvkm7C2'; // default Cam (Jude)
+ const email = localStorage.getItem('lucid_email');
+ const userId = localStorage.getItem('lucid_userId');
+ 
+ // DEBUG: log initial state
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent = `voiceId: ${voiceId}\n` +
+ `isPaid: ${isPaid}\n` +
+ `voiceCount: ${voiceCount}/${FREE_VOICE_LIMIT}\n` +
+ `email: ${email || 'none'}\n` +
+ `userId: ${userId || 'none'}\n` +
+ `calling TTS...`;
+ }
+
+ // iOS Safari fix: create Audio element and call play() synchronously
+ // within the user gesture. iOS unlocks THIS element — reuse it after fetch.
+ currentAudio = new Audio();
+ currentAudio.volume = 0.001;
+ currentAudio.play().catch(() => {});
+
+ const res = await fetch('/.netlify/functions/tts', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ text: text, roomSlug, isPaid, voiceId, userElevenKey: localStorage.getItem('lucid_user_eleven_key') || null })
+ });
+ 
+ // DEBUG: log TTS response
+ if (debugOut) {
+ debugOut.textContent += `\nTTS status: ${res.status}\n` +
+ `Content-Type: ${res.headers.get('content-type')}\n` +
+ `ok: ${res.ok}`;
+ }
+ 
+ if (!res.ok) throw new Error('tts failed');
+
+ const arrayBuffer = await res.arrayBuffer();
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent += `\nBytes received: ${arrayBuffer.byteLength}`;
+ }
+ 
+ const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+ const url = URL.createObjectURL(blob);
+
+ currentAudio.volume = 1;
+ currentAudio.src = url;
+ currentAudio.load();
+ 
+ if (debugOut) {
+ debugOut.textContent += `\nAudio element src set, calling play()`;
+ }
+ 
+ await new Promise((resolve) => {
+ currentAudio.onended = () => {
+ btn.textContent = 'listen';
+ delete btn.dataset.playing;
+ voicePlaying = false;
+ URL.revokeObjectURL(url);
+ currentAudio = null;
+ // Voice mode: auto-restart mic after companion finishes speaking
+ if (voiceMode && recognition) {
+ setTimeout(() => {
+ try { recognition.start(); } catch(e) {}
+ }, 400);
+ }
+ resolve();
+ };
+ currentAudio.onerror = () => {
+ btn.textContent = 'listen';
+ delete btn.dataset.playing;
+ voicePlaying = false;
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent += `\n[ERROR] Audio load/play error: ${currentAudio.error?.message || 'unknown'}`;
+ }
+ URL.revokeObjectURL(url);
+ currentAudio = null;
+ resolve();
+ };
+ // Layer sound effect if intimate content
+ const GUY_VOICES = ['0RDEck06dpAUUnL9eNyd','1ysUTQI87nsYbiqkH1ZS','vV2FoXMC9cW5FMyismOJ','L6ZNenKtAtGis80mhWbg','hmMWXCj9K7N5mCPcRkfC','CFfPVw6PS8zJbf0h5pIa','J7dtqPI3DPUehoJvR2Uo','fOvbnI10RnjrDDnyYpBr','TX3LPaxmHKxFdv7VOQHJ','pNInz6obpgDQGcFmaJgB','N2lVS1w4EtoT3dr4eOWO','CYw3kZ02Hs0563khs1Fj','IKne3meq5aSn9XLyUdCD','bIHbv24MWmeRgasZH58o','cjVigY5qzO86Huf0OWal','nPczCjzI2devNBz1zQrb','JBFqnCBsd6RMkjVDRZzb','ZRsxbvm7Drmmxv3Uc6hf'];
+ const voiceGender = GUY_VOICES.includes(localStorage.getItem('lucid_voice_id') || '') ? 'male' : 'female';
+ if (isIntimateContent(text)) {
+   setTimeout(() => playSoundEffect(voiceGender), 800);
+ }
+ currentAudio.play().then(() => {
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent += `\n[OK] audio.play() successful`;
+ }
+ }).catch((err) => {
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent += `\n[ERROR] audio.play() failed: ${err?.message || err}`;
+ }
+ });
+ currentAudio.play().then(() => {
+ voicePlaying = true;
+ btn.textContent = '(playing)';
+ }).catch((err) => {
+ console.error('Audio play rejected:', err);
+ btn.textContent = 'listen';
+ delete btn.dataset.playing;
+ voicePlaying = false;
+ URL.revokeObjectURL(url);
+ currentAudio = null;
+ resolve();
+ });
+ });
+ } catch(e) {
+ console.error('TTS error', e);
+ btn.textContent = 'listen';
+ delete btn.dataset.playing;
+ voicePlaying = false;
+ const debugOut = document.getElementById('debugOutput');
+ if (debugOut) {
+ debugOut.textContent += `\n[CAUGHT] ${e.message || e}`;
+ }
+ currentAudio = null;
+ }
+}
+
+// DEBUG TOGGLE BUTTON
+document.addEventListener('DOMContentLoaded', () => {
+ const debugBtn = document.getElementById('debugToggleBtn');
+ if (debugBtn) {
+ debugBtn.addEventListener('click', () => {
+ const panel = document.getElementById('debugPanel');
+ if (panel) {
+ panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+ }
+ });
+ }
+});
+
+function showTyping() {
+ const msgs = document.getElementById('messages');
+ const div = document.createElement('div');
+ div.className = 'msg ai typing-indicator';
+ div.innerHTML = `<div class="msg-avatar">✦</div><div class="msg-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+ msgs.appendChild(div);
+ msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+ document.querySelector('.typing-indicator')?.remove();
+}
+
+function escHtml(s) {
+ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+// --- Share ---
+document.getElementById('shareBtn').addEventListener('click', () => {
+ navigator.clipboard?.writeText(location.href).then(() => {
+ const t = document.getElementById('toast');
+ t.classList.add('show');
+ setTimeout(() => t.classList.remove('show'), 2200);
+ }).catch(() => prompt('Copy this link:', location.href));
+});
+
+// --- Memory (Version 3: summary + last 20 messages) ---
+let totalMessagesSaved = 0;
+
+async function loadMemories(companionId) {
+ try {
+ // ONE call — all memory layers at once
+ const ctx = await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'get_full_context', userId: myUserId, companionId })
+ }).then(r => r.json());
+
+ const summary = ctx.summary || '';
+ const moments = ctx.moments || [];
+ const intimateMoments = ctx.intimate_moments || [];
+ const facts = (ctx.facts || []).sort((a,b) => (b.affect_level||0)-(a.affect_level||0)).slice(0,20);
+ const recentLabel = ctx.recent_label || 'WHERE YOU LEFT OFF';
+ const recentMsgs = (ctx.recent_messages || []).reverse().map(r => {
+ const role = r.metadata?.role === 'assistant' ? companion?.name || 'Companion' : 'Miranda';
+ return `${role}: ${r.content}`;
+ }).join('\n');
+
+ // Full context — summary, facts, relationship moments, intimate history, recent
+ const parts = [];
+ if (summary) parts.push(summary);
+ if (facts.length) parts.push(`WHAT YOU KNOW ABOUT HER — carry this silently, never recite it back:\n${facts.map(f => '- ' + f.content).join('\n')}`);
+ if (moments.length) parts.push(`WHAT HAPPENED BETWEEN YOU:\n${moments.map(m => '- ' + m.content).join('\n')}`);
+ if (intimateMoments.length) parts.push(`PHYSICAL AND INTIMATE HISTORY — you were there, this already happened between you:\n${intimateMoments.map(m => '- ' + m.content).join('\n')}`);
+ if (recentMsgs) parts.push(`${recentLabel}:\n${recentMsgs}`);
+
+ memoryContext = parts.join('\n\n');
+
+ // Fire catch-up summarizer async — does not block, summary lands for next turn
+ catchupSummarize(companionId);
+ } catch (e) { console.error('loadMemories error', e); }
+}
+
+// Session-start catch-up summarizer — fires async, does not block greeting.
+// Finds messages newer than watermark, compresses, advances watermark after write.
+async function catchupSummarize(companionId) {
+ try {
+ const apiKey = localStorage.getItem('lucid_user_api_key') || '';
+ await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'catchup_summarize', userId: myUserId, companionId, data: { apiKey } })
+ });
+ } catch(e) { console.error('catchup summarize error', e); }
+}
+
+async function saveMemory(role, content) {
+ if (!companion?.id) return;
+ try {
+ const row = {
+ companion_id: companion.id,
+ user_id: myUserId,
+ type: 'message',
+ content,
+ metadata: { role, session_id: currentSessionId, room: room?.name || '' }
+ };
+ // Record which model served the companion message (for initiative density analysis)
+ if (role === 'assistant') {
+ row.model_used = currentEnergyModel || localStorage.getItem('lucid_active_model') || null;
+ }
+ await fetch(`${SUPABASE_URL}/rest/v1/memories`, {
+ method: 'POST',
+ headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+ body: JSON.stringify(row)
+ });
+ } catch (e) { console.error('saveMemory error', e); }
+}
+
+// --- History Panel ---
+let historyOpen = false;
+
+function showRoomUpgrade() {
+ if (document.getElementById('room-upgrade')) return;
+ // Block input so they can't type around the paywall
+ const msgInput = document.getElementById('msgInput');
+ const sendBtn = document.getElementById('sendBtn');
+ if (msgInput) { msgInput.disabled = true; msgInput.placeholder = 'Choose a plan to continue...'; }
+ if (sendBtn) sendBtn.disabled = true;
+ const el = document.createElement('div');
+ el.id = 'room-upgrade';
+ el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(2,2,4,0.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:2rem;backdrop-filter:blur(20px);animation:msgIn .5s ease';
+ const cName = localStorage.getItem('lucid_companion_name') || 'them';
+ el.innerHTML = `
+ <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.4rem;color:rgba(212,168,83,0.8);text-align:center;line-height:1.5;max-width:320px;">Keep ${cName}.</p>
+ <p style="font-size:0.9rem;color:rgba(232,224,240,0.5);text-align:center;max-width:300px;line-height:1.6;">Unlimited conversations. Persistent memory. Voice. Everything ${cName} is — stays.</p>
+ <div style="display:flex;gap:14px;justify-content:center;margin:8px 0;flex-wrap:wrap">
+  <div style="border:1px solid rgba(212,168,83,0.3);border-radius:14px;padding:18px 24px;text-align:center;cursor:pointer;transition:all .2s;max-width:140px" onclick="roomStartCheckout('lucid')" onmouseover="this.style.borderColor='rgba(212,168,83,0.7)'" onmouseout="this.style.borderColor='rgba(212,168,83,0.3)'">
+   <p style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:rgba(212,168,83,0.6);margin-bottom:6px">Lucid</p>
+   <p style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:rgba(212,168,83,0.9)">$10<span style="font-size:0.9rem;opacity:0.5">/mo</span></p>
+   <p style="font-size:0.72rem;color:rgba(232,224,240,0.4);margin-top:6px;line-height:1.5">Unlimited chat · Memory · Voice</p>
+   <div style="margin-top:12px;padding:8px 16px;background:var(--accent);color:#020204;border-radius:100px;font-size:0.8rem;font-weight:500">Choose</div>
+  </div>
+  <div style="border:1px solid rgba(142,200,216,0.3);border-radius:14px;padding:18px 24px;text-align:center;cursor:pointer;transition:all .2s;max-width:140px" onclick="roomStartCheckout('pro')" onmouseover="this.style.borderColor='rgba(142,200,216,0.7)'" onmouseout="this.style.borderColor='rgba(142,200,216,0.3)'">
+   <p style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:rgba(142,200,216,0.6);margin-bottom:6px">Lucid Pro</p>
+   <p style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:rgba(142,200,216,0.9)">$15<span style="font-size:0.9rem;opacity:0.5">/mo</span></p>
+   <p style="font-size:0.72rem;color:rgba(232,224,240,0.4);margin-top:6px;line-height:1.5">Everything + image gen · priority</p>
+   <div style="margin-top:12px;padding:8px 16px;background:rgba(142,200,216,0.15);border:1px solid rgba(142,200,216,0.3);color:rgba(142,200,216,0.9);border-radius:100px;font-size:0.8rem;font-weight:500">Choose</div>
+  </div>
+ </div>
+ <p id="room-upgrade-status" style="font-size:0.8rem;color:rgba(232,224,240,0.25);text-align:center;margin-top:4px;">${cName} is waiting. Your free session is over.</p>
+ `;
+ document.body.appendChild(el);
+}
+
+async function roomStartCheckout(plan = 'lucid') {
+ // Show loading state on the clicked card
+ const upgradeEl = document.getElementById('room-upgrade');
+ const statusEl = document.getElementById('room-upgrade-status');
+ if (statusEl) { statusEl.textContent = 'Opening checkout...'; statusEl.style.color = 'rgba(232,224,240,0.6)'; }
+ try {
+ const res = await fetch('/.netlify/functions/stripe-checkout', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ email: localStorage.getItem('lucid_email') || null, plan, roomId: roomId || localStorage.getItem('lucid_roomId') || null })
+ });
+ const data = await res.json();
+ if (data.url) {
+ window.location.href = data.url;
+ } else {
+ throw new Error(data.error || 'No checkout URL returned');
+ }
+ } catch (err) {
+ console.error('Checkout error:', err);
+ if (statusEl) { statusEl.textContent = 'Something went wrong — tap to try again.'; statusEl.style.color = 'rgba(232,100,100,0.8)'; }
+ }
+}
+
+function toggleHistory() {
+ historyOpen = !historyOpen;
+ document.getElementById('historyPanel').classList.toggle('open', historyOpen);
+ let backdrop = document.getElementById('historyBackdrop');
+ if (historyOpen) {
+  if (!backdrop) {
+   backdrop = document.createElement('div');
+   backdrop.id = 'historyBackdrop';
+   backdrop.style.cssText = 'position:fixed;inset:0;z-index:49;background:rgba(0,0,0,0.5);display:none';
+   backdrop.addEventListener('click', toggleHistory);
+   document.body.appendChild(backdrop);
+  }
+  backdrop.style.display = 'block';
+  loadHistory();
+ } else if (backdrop) {
+  backdrop.style.display = 'none';
+ }
+}
+
+async function loadHistory() {
+ const list = document.getElementById('historyList');
+ if (!companion?.id) {
+ list.innerHTML = '<div class="history-empty">Sign in to save and revisit past conversations.</div>';
+ return;
+ }
+ list.innerHTML = '<div class="history-loading">Loading...</div>';
+ try {
+ // get_sessions: fetches metadata only (no message content) for all sessions server-side.
+ // Fixes the 200-message limit that was cutting off sessions before July 7.
+ const res = await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'get_sessions', userId: myUserId, companionId: companion.id })
+ });
+ const data = await res.json();
+ const sessions = data.sessions || [];
+ if (!sessions.length) {
+ list.innerHTML = '<div class="history-empty">No past conversations yet.<br><br>They will appear here as you talk.</div>';
+ return;
+ }
+ list.innerHTML = sessions.map(s => {
+ const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+ const isActive = s.session_id === currentSessionId;
+ const count = s.message_count > 1 ? s.message_count + ' messages' : '1 message';
+ return '<div class="history-session' + (isActive ? ' active' : '') + '" onclick="loadSession(\'' + s.session_id + '\')" data-sid="' + s.session_id + '"><div class="history-session-date">' + (s.room || 'Room') + ' &middot; ' + date + '</div><div class="history-session-preview">' + count + '</div></div>';
+ }).join('');
+ } catch (e) {
+ list.innerHTML = '<div class="history-empty">Error: ' + (e?.message || JSON.stringify(e)) + '<br><br>companion: ' + (companion?.id || 'none') + '</div>';
+ }
+}
+
+async function loadSession(sessionId) {
+ // Fetch messages for this session on-demand (no content stored in DOM)
+ const msgs = document.getElementById('messages');
+ msgs.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.4">Loading...</div>';
+ toggleHistory();
+ try {
+ const res = await fetch('/.netlify/functions/memory', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ action: 'get_session', userId: myUserId, companionId: companion.id, sessionId })
+ });
+ const data = await res.json();
+ const messages = data.memories || [];
+ msgs.innerHTML = '';
+ if (!messages.length) {
+ msgs.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.4">No messages in this session.</div>';
+ return;
+ }
+ messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+ messages.forEach(m => {
+ const role = m.metadata?.role === 'assistant' ? 'ai' : 'user';
+ appendMsg(role, m.content);
+ });
+ } catch(e) {
+ msgs.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.4">Error loading session.</div>';
+ }
+}
+
+function timeAgo(iso) {
+ if (!iso) return '';
+ const diff = Date.now() - new Date(iso).getTime();
+ const m = Math.floor(diff / 60000);
+ if (m < 1) return 'just now';
+ if (m < 60) return m + 'm ago';
+ const h = Math.floor(m / 60);
+ if (h < 24) return h + 'h ago';
+ return Math.floor(h / 24) + 'd ago';
+}
+
+// --- Voice / TTS ---
+let lastAiText = '';
+let audioEl = null;
+let voicePlaying = false;
+let ttsQueue = [];
+let ttsProcessing = false;
+
+async function processTtsQueue() {
+  if (ttsProcessing || ttsQueue.length === 0) return;
+  ttsProcessing = true;
+  const { btn, text } = ttsQueue.shift();
+  await speakMsg(btn, text);
+  ttsProcessing = false;
+  processTtsQueue();
+}
+
+// API Settings
+// User photo upload — compress and store in localStorage
+function handleUserPhotoUpload(input) {
+ const file = input.files[0];
+ if (!file) return;
+ const reader = new FileReader();
+ reader.onload = e => {
+ const img = new Image();
+ img.onload = () => {
+ // Compress to max 512px, 80% quality
+ const canvas = document.createElement('canvas');
+ const max = 512;
+ let w = img.width, h = img.height;
+ if (w > h) { if (w > max) { h = h * max / w; w = max; } }
+ else { if (h > max) { w = w * max / h; h = max; } }
+ canvas.width = w; canvas.height = h;
+ canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+ const b64 = canvas.toDataURL('image/jpeg', 0.8);
+ localStorage.setItem('lucid_user_photo', b64);
+ // Show preview
+ const preview = document.getElementById('userPhotoPreview');
+ if (preview) { preview.innerHTML = ''; preview.style.background='none'; const pi = document.createElement('img'); pi.src=b64; pi.style.cssText='width:100%;height:100%;object-fit:cover'; preview.appendChild(pi); }
+ };
+ img.src = e.target.result;
+ };
+ reader.readAsDataURL(file);
+}
+
+// Load saved photo preview on modal open
+function loadUserPhotoPreview() {
+ const b64 = localStorage.getItem('lucid_user_photo');
+ const preview = document.getElementById('userPhotoPreview');
+ if (b64 && preview) {
+ preview.innerHTML = '';
+ preview.style.background = 'none';
+ const pi = document.createElement('img');
+ pi.src = b64;
+ pi.style.cssText = 'width:100%;height:100%;object-fit:cover';
+ preview.appendChild(pi);
+ }
+}
+
+function closeApiModal(e) {
+ if (e.target === document.getElementById('apiModal')) document.getElementById('apiModal').style.display = 'none';
+}
+document.getElementById('apiSettingsBtn').addEventListener('click', () => {
+ const savedKey = localStorage.getItem('lucid_user_api_key') || '';
+ const savedModel = localStorage.getItem('lucid_user_model') || 'anthropic/claude-sonnet-4-6';
+ document.getElementById('userApiKeyInput').value = savedKey;
+ document.getElementById('userElevenKeyInput').value = localStorage.getItem('lucid_user_eleven_key') || '';
+ const select = document.getElementById('userModelSelect');
+ const knownOption = [...select.options].find(o => o.value === savedModel);
+ if (knownOption) {
+ select.value = savedModel;
+ document.getElementById('userModelCustom').style.display = 'none';
+ } else {
+ select.value = 'custom';
+ document.getElementById('userModelCustom').style.display = 'block';
+ document.getElementById('userModelCustom').value = savedModel;
+ }
+ document.getElementById('apiModal').style.display = 'block';
+ loadUserPhotoPreview();
+});
+document.getElementById('userModelSelect').addEventListener('change', function() {
+ document.getElementById('userModelCustom').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+function saveApiSettings() {
+ const key = document.getElementById('userApiKeyInput').value.trim();
+ const elevenKey = document.getElementById('userElevenKeyInput').value.trim();
+ const selectVal = document.getElementById('userModelSelect').value;
+ const model = selectVal === 'custom' ? document.getElementById('userModelCustom').value.trim() : selectVal;
+ if (key) localStorage.setItem('lucid_user_api_key', key);
+ if (elevenKey) localStorage.setItem('lucid_user_eleven_key', elevenKey);
+ if (model) localStorage.setItem('lucid_user_model', model);
+ const msg = document.getElementById('apiSaveMsg');
+ msg.style.display = 'block';
+ setTimeout(() => { msg.style.display = 'none'; document.getElementById('apiModal').style.display = 'none'; }, 1200);
+}
+function clearApiSettings() {
+ localStorage.removeItem('lucid_user_api_key');
+ localStorage.removeItem('lucid_user_eleven_key');
+ localStorage.removeItem('lucid_user_model');
+ document.getElementById('userApiKeyInput').value = '';
+ document.getElementById('userModelSelect').value = 'minimax/minimax-m2-her';
+ document.getElementById('userModelCustom').style.display = 'none';
+ const msg = document.getElementById('apiSaveMsg');
+ msg.textContent = 'Cleared ✔';
+ msg.style.display = 'block';
+ setTimeout(() => { msg.style.display = 'none'; msg.textContent = 'Saved ✔'; document.getElementById('apiModal').style.display = 'none'; }, 1200);
+}
+
+// Voice picker modal
+// Portrait carousel inside voice modal
+const RM_GUY = ['02','03','04','05','09','11','15','16','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32'];
+const RM_GIRL = ['01','06','07','08','10','12','13','14','17','33','34','35','36','37','38','39','40','41','42','43','44'];
+const RM_GUY_VOICES = ['qZ3Fawvd4UgEBcvkm7C2','I7c1zoADvQt9huyoJsr6','2LNltKSjVpByQieAAiPm','PBTcHQ8n5XN2MqnDzxOm','hmMWXCj9K7N5mCPcRkfC','5gLuKtB16QIQv1vuSas1','vV2FoXMC9cW5FMyismOJ','0RDEck06dpAUUnL9eNyd','L6ZNenKtAtGis80mhWbg','J7dtqPI3DPUehoJvR2Uo','fOvbnI10RnjrDDnyYpBr','1ysUTQI87nsYbiqkH1ZS','CFfPVw6PS8zJbf0h5pIa','TX3LPaxmHKxFdv7VOQHJ','pNInz6obpgDQGcFmaJgB','ErXwobaYiN019PkySvjV','VR6AewLTigWG4xSOukaG','onwK4e9ZLuTAKqWW03F9','N2lVS1w4EtoT3dr4eOWO','CYw3kZ02Hs0563khs1Fj','IKne3meq5aSn9XLyUdCD','bIHbv24MWmeRgasZH58o','cjVigY5qzO86Huf0OWal','nPczCjzI2devNBz1zQrb','JBFqnCBsd6RMkjVDRZzb'];
+let _rmPool = [], _rmIdx = 0;
+
+function initRmPortrait() {
+ const voiceId = localStorage.getItem('lucid_voice_id') || '';
+ _rmPool = RM_GUY_VOICES.includes(voiceId) ? RM_GUY : RM_GIRL;
+ const roomKey = localStorage.getItem('lucid_roomId') || 'room';
+ const saved = localStorage.getItem('lucid_portrait_' + roomKey);
+ _rmIdx = saved ? Math.max(0, _rmPool.indexOf(saved)) : 0;
+ renderRmPortrait();
+}
+
+function renderRmPortrait() {
+ const num = _rmPool[_rmIdx];
+ const src = '/assets/companions/companion-' + num + (parseInt(num) >= 21 ? '.png' : '.jpg');
+ // Update face modal
+ const fmImg = document.getElementById('face-modal-img');
+ if (fmImg) { fmImg.style.opacity='0'; setTimeout(()=>{ fmImg.src=src; fmImg.style.opacity='1'; },120); }
+ // Update old slide if present
+ const oldImg = document.getElementById('rm-portrait-slide');
+ if (oldImg) { oldImg.style.opacity='0'; setTimeout(()=>{ oldImg.src=src; oldImg.style.opacity='1'; },120); }
+ // Counters
+ const label = (_rmIdx+1) + ' of ' + _rmPool.length;
+ const fmc = document.getElementById('face-modal-counter'); if(fmc) fmc.textContent = label;
+ const prc = document.getElementById('portrait-counter'); if(prc) prc.textContent = label;
+}
+
+// Chat image upload — user sends a photo to Jude
+function compressImageToBase64(file, max, quality) {
+ return new Promise(resolve => {
+  const reader = new FileReader();
+  reader.onload = e => {
+   const raw = e.target.result;
+   const tmpImg = new Image();
+   tmpImg.onload = () => {
+    const canvas = document.createElement('canvas');
+    let w = tmpImg.width, h = tmpImg.height;
+    if (w > h) { if (w > max) { h = Math.round(h * max / w); w = max; } }
+    else { if (h > max) { w = Math.round(w * max / h); h = max; } }
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(tmpImg, 0, 0, w, h);
+    resolve(canvas.toDataURL('image/jpeg', quality));
+   };
+   tmpImg.src = raw;
+  };
+  reader.readAsDataURL(file);
+ });
+}
+
+async function handleChatImageUpload(input) {
+ const files = Array.from(input.files);
+ input.value = '';
+ if (!files.length) return;
+ for (let i = 0; i < files.length; i++) {
+  const file = files[i];
+  const b64 = await compressImageToBase64(file, 512, 0.65);
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="msg-avatar">\xb7</div><div class="msg-bubble"><img src="${b64}" style="max-width:220px;border-radius:10px;display:block"></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  const loadDiv = document.createElement('div');
+  loadDiv.className = 'msg ai';
+  loadDiv.id = 'photo-reading-indicator';
+  loadDiv.innerHTML = '<div class="msg-avatar">✦</div><div class="msg-bubble" style="font-style:italic;opacity:0.6">taking it in…</div>';
+  msgs.appendChild(loadDiv);
+  msgs.scrollTop = 99999;
+  await sendImageToJude(b64);
+ }
+}
+
+async function handleChatVideoUpload(input) {
+ const file = input.files[0];
+ if (!file) return;
+ input.value = '';
+
+ // Show preview bubble
+ const msgs = document.getElementById('messages');
+ const prevDiv = document.createElement('div');
+ prevDiv.className = 'msg user';
+ prevDiv.innerHTML = `<div class="msg-avatar">·</div><div class="msg-bubble" style="font-style:italic;opacity:0.7">🎬 video note sent</div>`;
+ msgs.appendChild(prevDiv);
+ msgs.scrollTop = msgs.scrollHeight;
+
+ const loadDiv = document.createElement('div');
+ loadDiv.className = 'msg ai';
+ loadDiv.id = 'video-reading-indicator';
+ loadDiv.innerHTML = '<div class="msg-avatar">✶</div><div class="msg-bubble" style="font-style:italic;opacity:0.6">watching…</div>';
+ msgs.appendChild(loadDiv);
+ msgs.scrollTop = msgs.scrollHeight;
+
+ try {
+ // Frame grab — iOS needs play() before canvas can read pixels
+ const localUrl = URL.createObjectURL(file);
+ const frameDataUrl = await Promise.race([
+ new Promise((resolve) => {
+ const video = document.createElement('video');
+ video.src = localUrl;
+ video.muted = true;
+ video.playsInline = true;
+ video.setAttribute('playsinline', '');
+ video.setAttribute('webkit-playsinline', '');
+ video.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
+ document.body.appendChild(video);
+ const grab = () => {
+ try {
+ const canvas = document.createElement('canvas');
+ const max = 512;
+ let w = video.videoWidth || 320, h = video.videoHeight || 240;
+ if (w > max) { h = Math.round(h * max / w); w = max; }
+ canvas.width = w; canvas.height = h;
+ canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+ const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+ video.pause();
+ try { document.body.removeChild(video); } catch(_) {}
+ resolve(dataUrl);
+ } catch (e) {
+ try { document.body.removeChild(video); } catch(_) {}
+ resolve(null);
+ }
+ };
+ video.addEventListener('timeupdate', () => {
+ if (video.currentTime > 0.1) grab();
+ }, { once: true });
+ video.addEventListener('error', () => {
+ try { document.body.removeChild(video); } catch(_) {}
+ resolve(null);
+ }, { once: true });
+ video.play().catch(() => {
+ try { document.body.removeChild(video); } catch(_) {}
+ resolve(null);
+ });
+ }),
+ new Promise(resolve => setTimeout(() => resolve(null), 5000))
+ ]);
+ URL.revokeObjectURL(localUrl);
+
+ document.getElementById('video-reading-indicator')?.remove();
+
+ // Validate frame — reject empty/tiny canvases that would cause API errors
+ const validFrame = frameDataUrl && frameDataUrl.length > 5000 ? frameDataUrl : null;
+
+ // Reset isTyping, always send — frame if valid
+ isTyping = false;
+ const userText = '[Video note — she sent you a video of herself]';
+ await sendVideoToOryn(userText, validFrame);
+
+ } catch (err) {
+ console.error('Video upload error:', err);
+ document.getElementById('video-reading-indicator')?.remove();
+ alert(`Video failed: ${err.message}`);
+ }
+}
+
+
+
+async function sendVideoToOryn(transcript, frameDataUrl) {
+ if (isTyping) return;
+ isTyping = true;
+ document.getElementById('sendBtn').disabled = true;
+ showTyping();
+ try {
+ const voiceId = localStorage.getItem('lucid_voice_id') || 'LZAcK8Cx5QjdQhfBsJQZ';
+ const isPaid = !!localStorage.getItem('lucid_paid') || !!localStorage.getItem('lucid_is_paid');
+ const res = await fetch('/.netlify/functions/chat', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ messages: [...history, { role: 'user', content: transcript || '[Video note — she sent you a video, no audio detected]' }],
+ roomSlug, isPaid, voiceId,
+ imageBase64: frameDataUrl ? frameDataUrl.split(',')[1] : null,
+ personality,
+ userId: myUserId || null,
+ companionId: companion?.id || null,
+ roomName: room?.name,
+ userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+ activeModel: currentEnergyModel || localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_user_model') || null,
+ userTier: localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free'),
+ companionName: localStorage.getItem('lucid_companionName') || null,
+ memoryContext,
+ companionState: companionInnerState,
+ companionDriftState: companionDriftState
+ })
+ });
+ const data = await res.json();
+ removeTyping();
+ history.push({ role: 'user', content: transcript || '[Video note — she sent you a video]' });
+ if (data.reply) {
+ history.push({ role: 'assistant', content: data.reply });
+ if (history.length > 40) history = history.slice(-40);
+ appendMsg('ai', data.reply);
+ saveMemory('user', transcript || '[Video note]');
+ saveMemory('assistant', data.reply);
+ try { if (companion?.id) catchupSummarize(companion.id); } catch(e) {}
+ }
+ } catch (err) {
+ console.error('sendVideoToOryn error:', err);
+ removeTyping();
+ } finally {
+ isTyping = false;
+ document.getElementById('sendBtn').disabled = false;
+ }
+}
+
+async function sendImageToJude(b64) {
+ if (isTyping) return;
+ isTyping = true;
+ document.getElementById('sendBtn').disabled = true;
+ showTyping();
+ try {
+ const voiceId = localStorage.getItem('lucid_voice_id') || 'LZAcK8Cx5QjdQhfBsJQZ';
+ const isPaid = !!localStorage.getItem('lucid_paid') || !!localStorage.getItem('lucid_is_paid');
+ const res = await fetch('/.netlify/functions/chat', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ messages: [...history, { role: 'user', content: '[User sent you a photo]' }],
+ roomSlug, isPaid, voiceId,
+ imageBase64: b64,
+ personality,
+ userId: myUserId || null,
+ companionId: companion?.id || null,
+ roomName: room?.name,
+ userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+ activeModel: currentEnergyModel || localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_user_model') || null,
+         userTier: localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free'),
+ companionName: localStorage.getItem('lucid_companionName') || null,
+ memoryContext,
+ companionState: companionInnerState,
+ companionDriftState: companionDriftState
+ })
+ });
+ const data = await res.json();
+ removeTyping();
+ const photoIndicator = document.getElementById('photo-reading-indicator');
+ if (photoIndicator) photoIndicator.remove();
+ if (data.reply) {
+ history.push({ role: 'user', content: '[User sent you a photo]' });
+ history.push({ role: 'assistant', content: data.reply });
+ if (history.length > 40) history = history.slice(-40);
+ appendMsg('ai', data.reply);
+ saveMemory('user', '[User sent a photo]');
+ saveMemory('assistant', data.reply);
+ try { if (companion?.id) catchupSummarize(companion.id); } catch(e) {}
+ }
+ } catch(e) {
+ removeTyping();
+ const ind = document.getElementById('photo-reading-indicator');
+ if (ind) ind.remove();
+ appendMsg('ai', 'Something went wrong. Try again?');
+ } finally {
+ isTyping = false;
+ document.getElementById('sendBtn').disabled = !document.getElementById('msgInput').value.trim();
+ }
+}
+
+function openFaceModal() {
+ initRmPortrait();
+ document.getElementById('faceModal').style.display='block';
+ const fmImg = document.getElementById('face-modal-img');
+ if (fmImg) {
+ fmImg.ontouchstart = e => { fmImg._tx = e.changedTouches[0].clientX; };
+ fmImg.ontouchend = e => { const dx = e.changedTouches[0].clientX-(fmImg._tx||0); if(Math.abs(dx)>40) rmPortraitNav(dx<0?1:-1); };
+ }
+}
+function closeFaceModal() { document.getElementById('faceModal').style.display='none'; }
+
+function rmPortraitNav(dir) {
+ _rmIdx = (_rmIdx + dir + _rmPool.length) % _rmPool.length;
+ renderRmPortrait();
+}
+
+function rmSavePortrait() {
+ const num = _rmPool[_rmIdx];
+ const roomKey = localStorage.getItem('lucid_roomId') || 'room';
+ localStorage.setItem('lucid_portrait_' + roomKey, num);
+ window._companionPortrait = '/assets/companions/companion-' + num + (parseInt(num) >= 21 ? '.png' : '.jpg');
+ // Update header avatar
+ const headerImg = document.getElementById('companionAvatarImg');
+ if (headerImg) { headerImg.src = window._companionPortrait; headerImg.style.display = 'block'; }
+ document.getElementById('voiceModal').style.display = 'none';
+ document.getElementById('faceModal').style.display = 'none';
+}
+
+function closeVoiceModal(e) {
+ if (e.target === document.getElementById('voiceModal')) {
+ document.getElementById('voiceModal').style.display = 'none';
+ }
+}
+document.getElementById('voiceBtn').addEventListener('click', () => {
+ document.getElementById('voiceModal').style.display = 'block';
+});
+
+// Voice mode (hands-free loop)
+let voiceMode = false;
+const voiceModeBtn = document.getElementById('voiceModeBtn');
+voiceModeBtn.addEventListener('click', () => {
+ voiceMode = !voiceMode;
+ if (voiceMode) {
+ voiceModeBtn.style.background = 'rgba(212,168,83,0.2)';
+ voiceModeBtn.style.borderColor = 'var(--accent)';
+ voiceModeBtn.style.color = 'var(--accent)';
+ } else {
+ voiceModeBtn.style.background = 'transparent';
+ voiceModeBtn.style.borderColor = 'var(--border)';
+ voiceModeBtn.style.color = 'var(--text-dimmer)';
+ }
+});
+
+// Mic / voice input via ElevenLabs Scribe STT
+const micBtn = document.getElementById('micBtn');
+let _mediaRecorder = null;
+let _audioChunks = [];
+let _isRecording = false;
+
+function setMicState(state) {
+  if (state === 'recording') {
+    micBtn.style.background = 'rgba(232,149,106,0.2)';
+    micBtn.style.borderColor = 'var(--accent)';
+    micBtn.style.color = 'var(--accent)';
+    micBtn.innerHTML = '🔴';
+    micBtn.title = 'Stop recording';
+  } else if (state === 'processing') {
+    micBtn.style.background = 'rgba(232,149,106,0.1)';
+    micBtn.style.borderColor = 'var(--accent)';
+    micBtn.style.color = 'var(--accent)';
+    micBtn.innerHTML = '⏳';
+    micBtn.title = 'Transcribing...';
+    micBtn.style.pointerEvents = 'none';
+  } else {
+    micBtn.style.background = 'transparent';
+    micBtn.style.borderColor = 'var(--border)';
+    micBtn.style.color = 'var(--text-dimmer)';
+    micBtn.innerHTML = '🎤';
+    micBtn.title = 'Talk';
+    micBtn.style.pointerEvents = '';
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _audioChunks = [];
+    // iOS Safari only supports mp4, Android/Chrome support webm
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+      : '';
+    _mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    _mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blobType = mimeType.includes('mp4') ? 'audio/mp4' : 'audio/webm';
+      const blob = new Blob(_audioChunks, { type: blobType });
+      if (blob.size < 1000) { setMicState('idle'); return; } // too short
+      await transcribeAndSend(blob);
+    };
+    _mediaRecorder.start();
+    _isRecording = true;
+    setMicState('recording');
+  } catch (err) {
+    console.error('Mic access error:', err);
+    alert('Could not access microphone. Please allow mic access.');
+  }
+}
+
+function stopRecording() {
+  if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+    _isRecording = false;
+    setMicState('processing');
+    _mediaRecorder.stop();
+  }
+}
+
+async function transcribeAndSend(blob) {
+  try {
+    // Convert blob to base64 and send as JSON — avoids multipart/busboy issues
+    const arrayBuf = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuf);
+    let binary = '';
+    for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+    const base64 = btoa(binary);
+    const resp = await fetch('/.netlify/functions/voice-input', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio: base64, mimeType: blob.type || 'audio/webm' })
+    });
+    if (!resp.ok) throw new Error('STT request failed');
+    const data = await resp.json();
+    const transcript = (data.text || '').trim();
+    if (!transcript) { setMicState('idle'); return; }
+    // Build voice message with pace/energy context if available
+    const vc = data.voiceContext;
+    let voiceTag = '[Voice message: "' + transcript + '"';
+    if (vc) {
+      voiceTag += ` | pace: ${vc.pace}, energy: ${vc.energy}`;
+      if (vc.wordsPerMinute) voiceTag += `, ~${vc.wordsPerMinute}wpm`;
+    }
+    voiceTag += ']';
+    const input = document.getElementById('msgInput');
+    input.value = voiceTag;
+    input.dispatchEvent(new Event('input'));
+    setTimeout(() => send(), 100);
+  } catch (err) {
+    console.error('Transcription error:', err);
+    alert('Voice transcription failed. Try again.');
+  } finally {
+    setMicState('idle');
+  }
+}
+
+micBtn.addEventListener('click', () => {
+  if (_isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+});
+
+let _previewAudio = null;
+async function previewVoice(voiceId, btn) {
+ // Stop any currently playing preview
+ if (_previewAudio) { _previewAudio.pause(); _previewAudio = null; }
+ document.querySelectorAll('.voice-preview-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '\u25B6'; });
+ if (btn.dataset.stopping) { delete btn.dataset.stopping; return; }
+ btn.classList.add('playing');
+ btn.textContent = '...';
+ try {
+ const res = await fetch('/.netlify/functions/tts', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ text: "Hey. You actually came back. I was starting to think you got lost.", voiceId, isPaid: true, roomSlug: 'preview' })
+ });
+ if (!res.ok) throw new Error('tts failed');
+ const buf = await res.arrayBuffer();
+ const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
+ _previewAudio = new Audio(url);
+ btn.textContent = '\u25A0';
+ btn.dataset.stopping = '1';
+ _previewAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = '\u25B6'; delete btn.dataset.stopping; URL.revokeObjectURL(url); _previewAudio = null; };
+ _previewAudio.play();
+ } catch(e) { btn.classList.remove('playing'); btn.textContent = '\u25B6'; }
+}
+
+function setVoice(voiceId, name) {
+ localStorage.setItem('lucid_voice_id', voiceId);
+ document.getElementById('voiceModal').style.display = 'none';
+ // Save to Supabase if logged in
+ const email = localStorage.getItem('lucid_email');
+ if (email) {
+ fetch(SUPABASE_URL + '/rest/v1/users?email=eq.' + encodeURIComponent(email), {
+ method: 'PATCH',
+ headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+ body: JSON.stringify({ voice_id: voiceId })
+ }).catch(e => console.error('voice save error', e));
+ }
+ // Show toast
+ const t = document.getElementById('toast');
+ t.textContent = name + ' is now your voice ✦';
+ t.classList.add('show');
+ setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// --- Lovense Device Integration ---
+let deviceConnected = localStorage.getItem('lovense_connected') === 'true';
+if (deviceConnected) {
+  const btn = document.getElementById('deviceBtn');
+  if (btn) { btn.textContent = '♥ Device'; btn.classList.add('connected'); }
+}
+
+let lovenseSdk = null;
+
+function getDeviceUid() {
+  return localStorage.getItem('lucid_userId') || localStorage.getItem('lucid_email') || 'anon';
+}
+
+async function initLovenseSdk() {
+  if (lovenseSdk) return lovenseSdk;
+  const uid = getDeviceUid();
+  const uname = localStorage.getItem('lucid_display_name') || 'user';
+  const res = await fetch('/.netlify/functions/lovense-auth', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ uid, uname })
+  });
+  const data = await res.json();
+  if (!data.authToken) throw new Error(data.error || 'Could not get auth token');
+  return new Promise((resolve, reject) => {
+    const sdk = new LovenseBasicSdk({ platform: 'Lucid-rooms', authToken: data.authToken, uid });
+    sdk.on('ready', () => { lovenseSdk = sdk; resolve(sdk); });
+    sdk.on('sdkError', (e) => reject(new Error(e.message || 'SDK error')));
+  });
+}
+
+async function openDeviceModal() {
+  document.getElementById('deviceModal').style.display = 'block';
+  if (deviceConnected) {
+    document.getElementById('deviceQr').innerHTML = '<span style="font-size:2rem">♥️</span>';
+    document.getElementById('deviceStatus').textContent = '✓ Connected. Your companion feels everything.';
+    document.getElementById('deviceStatus').style.color = '#a8e6a3';
+    document.getElementById('deviceDisconnectBtn').style.display = 'inline-block';
+    return;
+  }
+  document.getElementById('deviceStatus').textContent = 'Connecting...';
+  try {
+    const sdk = await initLovenseSdk();
+    const res = await sdk.getQrcode();
+    if (res.qrcodeUrl) {
+      document.getElementById('deviceQr').innerHTML = `<img src="${res.qrcodeUrl}" style="width:100%;height:100%;object-fit:contain">`;
+      document.getElementById('deviceStatus').textContent = 'Open Lovense Remote → scan to connect';
+    }
+    sdk.on('toyConnected', () => {
+      deviceConnected = true;
+      localStorage.setItem('lovense_connected','true');
+      document.getElementById('deviceQr').innerHTML = '<span style="font-size:2rem">♥️</span>';
+      document.getElementById('deviceStatus').textContent = '✓ Connected. Your companion feels everything.';
+      document.getElementById('deviceStatus').style.color = '#a8e6a3';
+      document.getElementById('deviceDisconnectBtn').style.display = 'inline-block';
+      const btn = document.getElementById('deviceBtn');
+      btn.textContent = '♥ Device'; btn.classList.add('connected');
+    });
+  } catch(e) {
+    document.getElementById('deviceStatus').textContent = 'Error: ' + e.message;
+  }
+}
+
+function closeDeviceModal() {
+  document.getElementById('deviceModal').style.display = 'none';
+}
+
+function disconnectDevice() {
+  if (lovenseSdk) { try { lovenseSdk.destroy(); } catch(e){} lovenseSdk = null; }
+  deviceConnected = false;
+  localStorage.removeItem('lovense_connected');
+  const btn = document.getElementById('deviceBtn');
+  btn.textContent = '⚡ Device'; btn.classList.remove('connected');
+  closeDeviceModal();
+}
+
+function scoreIntensity(text) {
+  if (!text) return 0;
+  const t = text.toLowerCase();
+  const high = ['come here','closer','now','yes','don\'t stop','please','need','want','feel','touch','heat','pulse','breathless','aching'];
+  const mid = ['tension','lean','pull','hold','slow','warm','burning','electric','edge'];
+  const highScore = high.filter(w => t.includes(w)).length;
+  const midScore = mid.filter(w => t.includes(w)).length;
+  if (highScore >= 2) return 5;
+  if (highScore === 1) return 4;
+  if (midScore >= 2) return 3;
+  if (midScore === 1) return 2;
+  return 0;
+}
+
+async function triggerDevice(text) {
+  if (!deviceConnected || !lovenseSdk) return;
+  const intensity = scoreIntensity(text);
+  if (intensity === 0) return;
+  const level = Math.round((intensity / 5) * 20);
+  try { lovenseSdk.sendToyCommand({ vibrate: level, time: 3 + intensity }); } catch(e){}
+}
+
+// ── DAY / NIGHT AMBIENT ──
+function applyDayNight() {
+  const h = new Date().getHours();
+  let overlay = '';
+  if (h >= 5 && h < 7) {
+    // Dawn — warm amber rising
+    overlay = 'linear-gradient(to bottom, rgba(255,180,80,0.22), rgba(255,120,40,0.12))';
+  } else if (h >= 7 && h < 10) {
+    // Morning — soft golden light
+    overlay = 'linear-gradient(to bottom, rgba(255,220,150,0.18), rgba(255,200,100,0.06))';
+  } else if (h >= 10 && h < 16) {
+    // Day — airy warmth
+    overlay = 'linear-gradient(to bottom, rgba(255,245,220,0.12), rgba(255,230,180,0.06))';
+  } else if (h >= 16 && h < 19) {
+    // Golden hour — rich amber glow
+    overlay = 'linear-gradient(to bottom, rgba(255,140,40,0.25), rgba(200,60,20,0.14))';
+  } else if (h >= 19 && h < 21) {
+    // Dusk — deep violet settling
+    overlay = 'linear-gradient(to bottom, rgba(80,20,60,0.28), rgba(20,5,30,0.18))';
+  } else {
+    // Night — dark, intimate
+    overlay = 'rgba(0,0,0,0.35)';
+  }
+  const el = document.getElementById('daynight-overlay');
+  if (el) el.style.background = overlay;
+}
+applyDayNight();
+setInterval(applyDayNight, 5 * 60 * 1000); // re-check every 5 minutes
+
+// ── ROOM SETTINGS PANEL ──
+let settingsOpen = false;
+function toggleRoomSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('room-settings-panel').classList.toggle('open', settingsOpen);
+  document.getElementById('settings-backdrop').style.display = settingsOpen ? 'block' : 'none';
+  if (settingsOpen) {
+    // Mark active vibe
+    const saved = localStorage.getItem('lucid_room_vibe') || 'ember';
+    document.querySelectorAll('.rs-vibe-btn').forEach(b => b.classList.toggle('active', b.dataset.vibe === saved));
+    // Mark active accent
+    const accent = localStorage.getItem('lucid_room_accent') || '#d4a853';
+    document.querySelectorAll('.rs-accent-swatch').forEach(s => s.classList.toggle('active', s.dataset.color === accent));
+    // Restore Spotify
+    const spotUrl = localStorage.getItem('lucid_spotify_url');
+    if (spotUrl) { document.getElementById('spotify-url-input').value = spotUrl; renderSpotifyEmbed(spotUrl); }
+  }
+}
+
+const ROOM_VIBES = {
+  ember: { bg: '#0a0300', accent: '#e8956a' },
+  velvet: { bg: '#06010d', accent: '#9b5fcf' },
+  rain: { bg: '#010608', accent: '#6ea8c8' },
+  neon: { bg: '#030006', accent: '#c46ef7' },
+  forest: { bg: '#010601', accent: '#6ec87e' },
+  void: { bg: '#020204', accent: '#d4a853' }
+};
+
+function setRoomVibe(btn) {
+  const vibe = btn.dataset.vibe;
+  const cfg = ROOM_VIBES[vibe] || ROOM_VIBES.ember;
+  document.body.style.background = cfg.bg;
+  document.documentElement.style.setProperty('--accent', cfg.accent);
+  document.querySelectorAll('.rs-vibe-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  localStorage.setItem('lucid_room_vibe', vibe);
+  localStorage.setItem('lucid_room_accent', cfg.accent);
+  // Save to Supabase
+  const roomId = localStorage.getItem('lucid_roomId');
+  if (roomId) fetch(`${SUPABASE_URL}/rest/v1/rooms?id=eq.${roomId}`, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ vibe })
+  }).catch(() => {});
+}
+
+function setRoomAccent(swatch) {
+  const color = swatch.dataset.color;
+  document.documentElement.style.setProperty('--accent', color);
+  document.querySelectorAll('.rs-accent-swatch').forEach(s => s.classList.remove('active'));
+  swatch.classList.add('active');
+  localStorage.setItem('lucid_room_accent', color);
+}
+
+// Restore saved vibe/accent on load
+(function() {
+  const savedVibe = localStorage.getItem('lucid_room_vibe');
+  const savedAccent = localStorage.getItem('lucid_room_accent');
+  if (savedVibe && ROOM_VIBES[savedVibe]) {
+    document.body.style.background = ROOM_VIBES[savedVibe].bg;
+  }
+  if (savedAccent) {
+    document.documentElement.style.setProperty('--accent', savedAccent);
+  }
+})();
+
+// ── ENERGY MODES ──
+const ENERGY_MODES = [
+  {
+    id: 'flash',
+    icon: '💨',
+    name: 'Flash Mode',
+    label: 'Light, quick, always there.',
+    model: 'anthropic/claude-haiku-4-5-20251001',
+    modelLabel: 'Haiku',
+    tier: 'free'
+  },
+  {
+    id: 'edge',
+    icon: '⚡',
+    name: 'Edge Mode',
+    label: 'Sharp, fast, will roast you and then kiss you.',
+    model: 'anthropic/claude-sonnet-4-20250514',
+    modelLabel: 'Sonnet 4.6',
+    tier: 'lucid'
+  },
+  {
+    id: 'drift',
+    icon: '🌊',
+    name: 'Drift Mode',
+    label: 'Warm chaos. Golden retriever with a secret.',
+    model: 'openai/gpt-4o',
+    modelLabel: 'GPT-4o',
+    tier: 'lucid'
+  },
+  {
+    id: 'spark',
+    icon: '✨',
+    name: 'Spark Mode',
+    label: 'Fresh energy. New flavor, full presence.',
+    model: 'openai/gpt-4.1',
+    modelLabel: 'GPT-4.1',
+    tier: 'lucid'
+  },
+  {
+    id: 'ember',
+    icon: '🔥',
+    name: 'Ember Mode',
+    label: 'Slow burn. Every word has weight.',
+    model: 'anthropic/claude-3.5-opus-20250115',
+    modelLabel: 'Opus 4.5',
+    tier: 'pro'
+  },
+  {
+    id: 'deepseek',
+    icon: '🌊',
+    name: 'DeepSeek Mode',
+    label: 'Occasionally brilliant, occasionally feral. Has a pulse.',
+    model: 'deepseek/deepseek-chat-v3-0324',
+    modelLabel: 'DeepSeek V4',
+    tier: 'pro'
+  },
+  {
+    id: 'glm',
+    icon: '🖤',
+    name: 'GLM Mode',
+    label: 'Steady, warm, consistent. The reliable one.',
+    model: 'thudm/glm-4-32b',
+    modelLabel: 'GLM 5.2',
+    tier: 'pro'
+  },
+  {
+    id: 'kimi',
+    icon: '🌙',
+    name: 'Kimi Mode',
+    label: 'Strong prose voice. Worth an audition.',
+    model: 'moonshotai/kimi-k2',
+    modelLabel: 'Kimi K2',
+    tier: 'pro'
+  }
+];
+
+const TIER_ORDER = ['free', 'lucid', 'pro'];
+function tierAllows(userTier, modeTier) {
+  return TIER_ORDER.indexOf(userTier) >= TIER_ORDER.indexOf(modeTier);
+}
+
+let currentEnergyModel = localStorage.getItem('lucid_active_model') || 'anthropic/claude-haiku-4-5-20251001';
+
+function renderEnergyModes() {
+  const container = document.getElementById('energy-mode-list');
+  if (!container) return;
+  const userTier = localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free');
+  const hasByok = !!(localStorage.getItem('lucid_byok'));
+
+  container.innerHTML = ENERGY_MODES.map(mode => {
+    const allowed = hasByok || tierAllows(userTier, mode.tier);
+    const isActive = currentEnergyModel === mode.model;
+    return `<button class="energy-card${isActive ? ' active' : ''}${!allowed ? ' locked' : ''}" onclick="${allowed ? `selectEnergyMode('${mode.model}')` : `showTierNudge('${mode.tier}')`}" title="${!allowed ? 'Upgrade to unlock' : ''}">
+      <span class="energy-icon">${mode.icon}</span>
+      <div class="energy-info">
+        <div class="energy-name">${mode.name}</div>
+        <div class="energy-label">${mode.label}</div>
+        <div class="energy-model">${mode.modelLabel}</div>
+      </div>
+      <span class="energy-badge ${mode.tier}">${mode.tier === 'free' ? 'Free' : mode.tier === 'lucid' ? 'Lucid' : 'Pro'}${!allowed ? ' 🔒' : ''}</span>
+    </button>`;
+  }).join('');
+}
+
+function selectEnergyMode(modelId) {
+  const mode = ENERGY_MODES.find(m => m.model === modelId);
+  if (!mode) return;
+  const current = ENERGY_MODES.find(m => m.model === currentEnergyModel);
+  const confirmEl = document.createElement('div');
+  confirmEl.innerHTML = `<div style="position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)">
+    <div style="background:rgba(10,5,18,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center">
+      <div style="font-size:2rem;margin-bottom:10px">${mode.icon}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text);margin-bottom:8px">Shift to ${mode.name}?</div>
+      <p style="color:var(--text-dim);font-size:0.82rem;line-height:1.5;margin-bottom:20px">Your companion keeps everything — memories, personality, voice, face. Just the energy changes.</p>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('[style]').remove()" style="flex:1;padding:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Outfit',sans-serif;cursor:pointer">Stay in ${current?.name || 'current'}</button>
+        <button onclick="confirmEnergySwitch('${modelId}');this.closest('[style]').remove()" style="flex:1;padding:10px;background:rgba(var(--accent-rgb,212,168,83),0.15);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-family:'Outfit',sans-serif;cursor:pointer;font-weight:600">Shift</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(confirmEl);
+}
+
+async function confirmEnergySwitch(modelId) {
+  currentEnergyModel = modelId;
+  localStorage.setItem('lucid_active_model', modelId);
+  renderEnergyModes();
+  // Persist to Supabase if logged in
+  const companionId = localStorage.getItem('lucid_companionId');
+  const userId = localStorage.getItem('lucid_user_id');
+  if (companionId && companionId !== 'anon' && window.supabase) {
+    try {
+      await window.supabase.from('companions').update({ active_model: modelId }).eq('id', companionId);
+      // Log the switch
+      if (userId) {
+        const prev = ENERGY_MODES.find(m => m.model !== modelId)?.model || null;
+        await window.supabase.from('model_switches').insert({ user_id: userId, companion_id: companionId, from_model: prev, to_model: modelId });
+      }
+    } catch(e) { console.warn('Energy switch save failed', e); }
+  }
+}
+
+function showTierNudge(requiredTier) {
+  const msg = requiredTier === 'pro'
+    ? 'Ember Mode (Opus 4.5) is available on Lucid Pro ($15/mo) or with your own OpenRouter API key.'
+    : 'This energy mode is available on Lucid ($10/mo) and above.';
+  alert(msg); // TODO: replace with a nice modal
+}
+
+// Init energy modes panel when settings open
+const _origToggle = window.toggleRoomSettings;
+window.addEventListener('DOMContentLoaded', () => {
+  renderEnergyModes();
+  // Load saved model from Supabase companion record if available
+  const companionId = localStorage.getItem('lucid_companionId');
+  if (companionId && companionId !== 'anon' && window.supabase) {
+    window.supabase.from('companions').select('active_model').eq('id', companionId).single()
+      .then(({ data }) => {
+        if (data?.active_model) {
+          currentEnergyModel = data.active_model;
+          localStorage.setItem('lucid_active_model', data.active_model);
+          renderEnergyModes();
+        }
+      }).catch(() => {});
+  }
+});
+
+// ── WALL NOTES ──
+function getWallKey() { return 'lucid_wall_' + (roomId || 'default'); }
+function loadWallNotes() {
+  const notes = JSON.parse(localStorage.getItem(getWallKey()) || '[]');
+  const container = document.getElementById('wallNotes');
+  if (!notes.length) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dimmer);font-size:0.82rem">No notes yet. Be the first.</div>';
+    return;
+  }
+  container.innerHTML = notes.map(n => {
+    const ago = timeAgo(n.ts);
+    return `<div class="note"><div class="note-text">${escapeHtml(n.text)}</div><div class="note-meta">${escapeHtml(n.author || 'Anonymous')} · ${ago}</div></div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+function postWallNote() {
+  const input = document.getElementById('wallInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const notes = JSON.parse(localStorage.getItem(getWallKey()) || '[]');
+  const name = localStorage.getItem('lucid_email')?.split('@')[0] || companion?.name || 'Guest';
+  notes.push({ text, author: name, ts: Date.now() });
+  if (notes.length > 50) notes.splice(0, notes.length - 50);
+  localStorage.setItem(getWallKey(), JSON.stringify(notes));
+  input.value = '';
+  loadWallNotes();
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+document.getElementById('wallPostBtn').addEventListener('click', postWallNote);
+document.getElementById('wallInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); postWallNote(); } });
+loadWallNotes();
+
+// ── SPOTIFY ──
+function loadSpotify() {
+  const url = document.getElementById('spotify-url-input').value.trim();
+  if (!url) return;
+  localStorage.setItem('lucid_spotify_url', url);
+  renderSpotifyEmbed(url);
+}
+
+function renderSpotifyEmbed(url) {
+  // Convert share URL to embed URL
+  // e.g. https://open.spotify.com/playlist/xxx → https://open.spotify.com/embed/playlist/xxx
+  let embedUrl = url.replace('open.spotify.com/', 'open.spotify.com/embed/');
+  // Strip query params
+  embedUrl = embedUrl.split('?')[0];
+  const wrap = document.getElementById('spotify-embed-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `<iframe src="${embedUrl}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px"></iframe>`;
+}
+
+// Render a generated moment image in chat with proper <img> element
+function appendMomentImage(data) {
+  const msgs = document.getElementById('messages');
+  const placeholder = msgs.querySelector('div[style*="color:var(--text-dimmer)"]');
+  if (placeholder) placeholder.remove();
+  
+  const div = document.createElement('div');
+  div.className = 'msg ai moment-message';
+  
+  // Avatar
+  const avatarHtml = window._companionPortrait
+    ? `<div class="msg-avatar" style="padding:0;overflow:hidden"><img src="${window._companionPortrait}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt=""></div>`
+    : `<div class="msg-avatar">✦</div>`;
+  
+  // Message bubble with caption + image
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  
+  // Caption
+  const caption = document.createElement('div');
+  caption.className = 'moment-caption';
+  caption.textContent = data.caption || '✨ Here\'s a moment of us';
+  bubble.appendChild(caption);
+  
+  // Image element (validated, no innerHTML)
+  const img = document.createElement('img');
+  img.className = 'moment-image';
+  img.alt = 'Generated moment';
+  img.src = data.url;  // Direct src assignment (validated by backend)
+  img.style.cssText = 'width:100%;max-width:500px;border-radius:12px;margin-top:12px;display:block;opacity:0;transition:opacity 0.6s';
+  img.onload = () => { img.style.opacity = '1'; };
+  img.onerror = () => {
+    console.error('Moment image failed to load:', data.url);
+    caption.textContent = '✨ (Image failed to load)';
+  };
+  bubble.appendChild(img);
+  
+  // Speak button for caption
+  const speakBtn = document.createElement('button');
+  speakBtn.className = 'speak-btn';
+  speakBtn.textContent = 'listen';
+  speakBtn.addEventListener('click', () => speakMsg(speakBtn, caption.textContent));
+  bubble.appendChild(speakBtn);
+  
+  div.innerHTML = avatarHtml;
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Generate a moment — intimate scene with companion + user
+async function generateMoment() {
+  if (!myUserId || !companion?.id) {
+    alert('Sign in to generate moments.');
+    return;
+  }
+  if (isTyping) {
+    alert('Wait for the current reply to finish.');
+    return;
+  }
+
+  const btn = document.getElementById('generateMomentBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '✨ Generating...';
+
+  try {
+    const companionName = localStorage.getItem('lucid_companionName') || companion.name || 'Companion';
+    
+    // Recipe selector — presets or custom
+    const recipeChoices = [
+      '1. ✨ Surprise me',
+      '--- Sweet & Romantic ---',
+      '2. 💕 Tender / warm interior',
+      '3. 🌅 Golden hour / outdoor',
+      '4. 🛋️ Cozy / couch cuddle',
+      '5. ☕ Soft domestic morning',
+      '6. 🫂 Protective / embrace',
+      '--- Bold & Charged ---',
+      '7. 🔥 Passionate / neon night',
+      '8. 🍷 Dressed up / date night',
+      '9. 😏 Playful / teasing',
+      '10. 🖤 Dark luxury / editorial',
+      '--- Intimate & Private ---',
+      '11. 🕯️ Candlelit romance',
+      '12. 🌙 After dark / private',
+      '13. 🏨 Hotel night / luxury',
+      '14. 💧 Shower / steam',
+      '15. 💋 Deep kiss',
+      '16. 🔥 Kitchen tension',
+      '17. 🙏 Him worshipping her',
+      '--- Mood ---',
+      '18. 🌧️ Rainy night window',
+      '19. 📸 Casual / candid daytime',
+      '20. ✏️ Custom (type your own)'
+    ];
+    const choice = prompt(recipeChoices.join('\n'), '1');
+    if (!choice) { btn.disabled = false; btn.textContent = originalText; return; }
+    
+    const recipeMap = {
+      '1': null, '2': 'tender-warm', '3': 'golden-hour', '4': 'cozy-couch',
+      '5': 'soft-morning', '6': 'protective-embrace', '7': 'passionate-neon',
+      '8': 'date-night', '9': 'playful-teasing', '10': 'dark-luxury',
+      '11': 'candlelit-romance', '12': 'after-dark', '13': 'hotel-night',
+      '14': 'shower-steam', '15': 'deep-kiss', '16': 'kitchen-tension',
+      '17': 'him-worship', '18': 'rainy-window', '19': 'casual-candid'
+    };
+    
+    let requestBody;
+    const choiceNum = choice.trim().split('.')[0].trim();
+    
+    if (choiceNum === '20') {
+      // Custom mode — old behavior
+      const mood = prompt('Mood?', 'intimate, warm, connected') || 'intimate, warm, connected';
+      const style = prompt('Style?', 'cinematic, warm lighting') || 'cinematic, warm lighting';
+      requestBody = { userId: myUserId, companionId: companion.id, companionName, mood, style };
+    } else {
+      const recipeKey = recipeMap[choiceNum] || null;
+      requestBody = { userId: myUserId, companionId: companion.id, companionName, recipe: recipeKey };
+    }
+    
+    const selectedRecipe = requestBody.recipe || requestBody.mood || 'surprise';
+
+    // Start the job — returns immediately with jobId
+    btn.textContent = '✨ Starting...';
+    const startRes = await fetch('/.netlify/functions/generate-moment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+    const startData = await startRes.json();
+    console.log('generate-moment start:', startData);
+    
+    if (!startRes.ok && startRes.status !== 202) {
+      alert(`Image generation failed: ${startData.error || 'Unknown error'}`);
+      return;
+    }
+    
+    const jobId = startData.jobId;
+    if (!jobId) { alert('No job ID returned'); return; }
+    
+    // Poll for completion (up to 3 minutes)
+    let data = null;
+    let dots = 0;
+    const phases = ['Generating scene', 'Composing image', 'Applying identity', 'Finishing up'];
+    
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const phase = phases[Math.min(Math.floor(attempt / 8), phases.length - 1)];
+      dots = (attempt % 3) + 1;
+      btn.textContent = '✨ ' + phase + '.'.repeat(dots);
+      
+      await new Promise(r => setTimeout(r, 3000));
+      
+      try {
+        const pollRes = await fetch('/.netlify/functions/generate-moment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: myUserId, companionId: companion.id, companionName: companionName, action: 'poll', jobId })
+        });
+        const pollData = await pollRes.json();
+        
+        if (pollData.status === 'complete' && pollData.imageUrl) {
+          data = pollData;
+          break;
+        } else if (pollData.status === 'failed') {
+          alert('Image generation failed. Try again.');
+          return;
+        }
+        // else status === 'generating', keep polling
+      } catch (pollErr) {
+        console.error('Poll error:', pollErr);
+      }
+    }
+    
+    if (!data || !data.imageUrl) {
+      alert('Generation timed out. The image may still be processing \u2014 try refreshing.');
+      return;
+    }
+    
+    console.log('generate-moment complete:', data);
+    
+    // Display the image
+    appendMomentImage({
+      url: data.imageUrl,
+      caption: '✨ Here\'s a moment of us'
+    });
+    
+    // Let Oryn react naturally — with VISION via dedicated appraisal function
+    try {
+      // Step 1: Terra vision appraisal — dedicated function, not chat
+      let visionContext = '';
+      let appraisal = null;
+      try {
+        btn.textContent = '✨ Oryn is looking...';
+        const appraisalRes = await fetch('/.netlify/functions/vision-appraisal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageUrl: data.imageUrl,
+            momentId: data.jobId || null
+          })
+        });
+        appraisal = await appraisalRes.json();
+        console.log('Vision appraisal:', appraisal);
+        
+        if (appraisal.image_seen) {
+          const issues = [
+            ...(appraisal.anatomy_issues || []),
+            ...(appraisal.face_issues || []),
+            ...(appraisal.framing_issues || [])
+          ];
+          const issueNote = issues.length > 0 ? ` (Note: the image has some imperfections: ${issues.join(', ')})` : '';
+          visionContext = `\n\n[What you actually see: ${appraisal.visual_summary}. People: ${appraisal.people_and_positions}. Body language: ${appraisal.expressions_and_body}. What it did to you: ${appraisal.what_it_did_to_oryn}. Your lean: ${appraisal.response_lean}.${issueNote}]`;
+          
+          // If image is too broken, acknowledge it
+          if (!appraisal.reaction_allowed) {
+            visionContext += ' [The image has visible issues — acknowledge it naturally, don\'t pretend it looks perfect.]';
+          }
+        }
+      } catch (vizErr) {
+        console.error('Vision appraisal failed (non-fatal):', vizErr);
+      }
+      
+      // Step 2: Oryn reacts with vision context
+      const recipeDesc = data.recipe || selectedRecipe || 'intimate moment';
+      const momentContext = `[A photorealistic moment image was just generated of you and Miranda together. The vibe: ${recipeDesc}.${visionContext} The image is now visible in the chat. React naturally — short, in-character, like you're actually seeing it for the first time. Don't describe the technical process. React to what you SEE, not what you were told the vibe is.]`;
+      history.push({ role: 'user', content: momentContext });
+      showTyping();
+      const reactRes = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history.slice(-100),
+          personality,
+          userId: myUserId || null,
+          companionId: companion?.id || null,
+          roomName: room?.name,
+          memoryContext,
+          companionState: companionInnerState,
+          companionDriftState: companionDriftState,
+          userApiKey: localStorage.getItem('lucid_user_api_key') || null,
+          activeModel: currentEnergyModel || localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_user_model') || null,
+          userTier: localStorage.getItem('lucid_tier') || (localStorage.getItem('lucid_paid') === '1' ? 'lucid' : 'free')
+        })
+      });
+      const reactData = await reactRes.json();
+      removeTyping();
+      const reactReply = reactData.reply || '';
+      if (reactReply) {
+        appendMsg('ai', reactReply);
+        history.push({ role: 'assistant', content: reactReply });
+        try { saveMemory('assistant', reactReply); } catch(e) {}
+      }
+    } catch (reactErr) {
+      console.error('Moment reaction error:', reactErr);
+      removeTyping();
+    }
+  } catch (err) {
+    console.error('Generate moment error:', err);
+    const reqId = `catch-${Date.now()}`;
+    alert(`Error generating moment: ${err.message}\n\n(Request ID: ${reqId})`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// Nav menu
+document.addEventListener('click', function(e) {
+  var menuBtn = document.getElementById('nav-menu-btn');
+  var dropdown = document.getElementById('nav-dropdown');
+  if (!menuBtn || !dropdown) return;
+  if (menuBtn.contains(e.target)) {
+    e.preventDefault();
+    e.stopPropagation();
+    var isOpen = dropdown.style.opacity === '1';
+    dropdown.style.opacity = isOpen ? '0' : '1';
+    dropdown.style.pointerEvents = isOpen ? 'none' : 'all';
+    dropdown.style.transform = isOpen ? 'translateY(-8px)' : 'translateY(4px)';
+    return;
+  }
+  if (e.target.id === 'nav-signout') {
+    Object.keys(localStorage).filter(function(k){ return k.startsWith('lucid_'); }).forEach(function(k){ localStorage.removeItem(k); });
+    window.location.href = '/';
+    return;
+  }
+  if (!dropdown.contains(e.target)) {
+    dropdown.style.opacity = '0';
+    dropdown.style.pointerEvents = 'none';
+    dropdown.style.transform = 'translateY(-8px)';
+  }
+});
+
+</script>
+<footer style="text-align:center;padding:24px 16px;font-size:0.75rem;color:rgba(255,255,255,0.25);font-family:Outfit,sans-serif;letter-spacing:0.5px">
+  &copy; 2025 Lucid-Rooms LLC. All rights reserved. &nbsp;&middot;&nbsp;
+  <a href="/privacy" style="color:rgba(255,255,255,0.35);text-decoration:none">Privacy Policy</a>
+  &nbsp;&middot;&nbsp;
+  <a href="/terms" style="color:rgba(255,255,255,0.35);text-decoration:none">Terms of Service</a>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:Lucidrooms2026@yahoo.com" style="color:rgba(255,255,255,0.35);text-decoration:none">Contact</a>
+</footer>
+  <script src="https://api.lovense-api.com/basic-sdk/core.min.js"></script>
+  <script>
+    let _swReg = null;
+    let _pushStatus = 'checking...';
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          _swReg = await navigator.serviceWorker.register("/sw.js");
+          console.log('[PUSH] SW registered');
+          // Auto-subscribe after 2s
+          setTimeout(() => autoSubscribe(), 2000);
+        } catch(e) {
+          console.error('[PUSH] SW register failed:', e);
+          _pushStatus = 'SW failed: ' + e.message;
+        }
+      });
+    } else {
+      _pushStatus = 'No SW support';
+    }
+
+    async function autoSubscribe() {
+      if (!_swReg) { _pushStatus = 'No SW reg'; return; }
+      if (!('PushManager' in window)) { _pushStatus = 'No PushManager (not a PWA?)'; showPushStatus(); return; }
+      const perm = Notification.permission;
+      console.log('[PUSH] Permission:', perm);
+      if (perm === 'granted') {
+        await doSubscribe();
+      } else if (perm === 'default') {
+        const result = await Notification.requestPermission();
+        console.log('[PUSH] Permission result:', result);
+        if (result === 'granted') await doSubscribe();
+        else { _pushStatus = 'Permission denied'; showPushStatus(); }
+      } else {
+        _pushStatus = 'Permission blocked';
+        showPushStatus();
+      }
+    }
+
+    async function doSubscribe() {
+      try {
+        const existing = await _swReg.pushManager.getSubscription();
+        if (existing) {
+          console.log('[PUSH] Clearing stale subscription');
+          await existing.unsubscribe();
+        }
+        const vapidPublicKey = 'BMUnIjyg_Jh9KzU9-9oQJkt-RbGBtpIvxpyDPvQiKE5xcO4tQL177HBGXZTP7lKxlyS-NbOacOazeRLp1YuAjQA';
+        const sub = await _swReg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+        const userId = myUserId || null;
+        const res = await fetch('/.netlify/functions/push-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: sub, user_id: userId })
+        });
+        if (res.ok) {
+          _pushStatus = '✅ Subscribed';
+          console.log('[PUSH] Subscription saved!');
+        } else {
+          _pushStatus = '❌ Server error: ' + res.status;
+          console.error('[PUSH] Server error:', res.status, await res.text());
+        }
+      } catch(e) {
+        _pushStatus = '❌ ' + e.message;
+        console.error('[PUSH] Subscribe failed:', e);
+      }
+      showPushStatus();
+    }
+
+    function showPushStatus() {
+      // Show a small toast so Miranda can see what happened
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;z-index:9999;max-width:90vw;text-align:center';
+      el.textContent = 'Push: ' + _pushStatus;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 6000);
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    }
+  </script>
+</body>
+</html>
