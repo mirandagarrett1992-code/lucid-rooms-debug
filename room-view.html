@@ -3080,7 +3080,10 @@ document.addEventListener('click', function(e) {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
         });
-        const userId = myUserId || null;
+        // This push code lives in a separate <script> block, so the main
+        // block's lexical `myUserId` binding is not visible here in Safari.
+        // Read the durable identity directly instead of crashing push setup.
+        const userId = localStorage.getItem('lucid_userId') || null;
         const res = await fetch('/.netlify/functions/push-subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
