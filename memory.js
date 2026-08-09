@@ -220,6 +220,25 @@ exports.handler = async (event) => {
         msgs = Array.isArray(raw) ? [...raw].reverse() : [];
       }
 
+      // Provider/policy refusals are operational output, not autobiographical
+      // evidence. Keep the transcript, but never let a batch containing one
+      // rewrite identity, relationship status, facts, stakes, or summaries.
+      if (msgs?.some(r => r.metadata?.provider_artifact === true)) {
+        const newestArtifactBatchMessageAt = msgs[msgs.length - 1]?.created_at;
+        if (newestArtifactBatchMessageAt) {
+          try {
+            await sbPatch(`companion_states?companion_id=eq.${companionId}&user_id=eq.${userId}`, {
+              last_summarized_at: newestArtifactBatchMessageAt
+            });
+          } catch (_) {}
+        }
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ ok: true, skipped: true, reason: 'provider_artifact_batch', count: msgs.length })
+        };
+      }
+
       // Threshold gate
       const THRESHOLD = 5;
       if (!msgs || msgs.length < THRESHOLD) {
