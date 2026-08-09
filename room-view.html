@@ -558,11 +558,15 @@ if (myUserId === 'ff208157-a6a2-4a1a-aaf2-e42b7e84605c') {
  myUserId = '7f356201-9ef9-4448-a391-272b6c8fa90e';
  localStorage.setItem('lucid_userId', myUserId);
 }
-// Miranda always gets Opus as her default model
+// One-time migration away from the legacy Miranda -> Opus pin.
+// The companion/server is authoritative after this migration; the browser
+// must never silently overwrite the model selected for a companion.
 if (myUserId === '7f356201-9ef9-4448-a391-272b6c8fa90e' || localStorage.getItem('lucid_email') === 'mirandagarrett1992@yahoo.com') {
- if (!localStorage.getItem('lucid_active_model') || localStorage.getItem('lucid_active_model') === 'anthropic/claude-haiku-4-5-20251001' || localStorage.getItem('lucid_user_model') === 'anthropic/claude-sonnet-4-6') {
- localStorage.setItem('lucid_active_model', 'anthropic/claude-opus-4-6');
- localStorage.setItem('lucid_user_model', 'anthropic/claude-opus-4-6');
+ const migrationKey = 'lucid_model_pin_migrated_terra_v1';
+ if (!localStorage.getItem(migrationKey)) {
+   localStorage.setItem('lucid_active_model', 'openai/gpt-5.6-terra');
+   localStorage.setItem('lucid_user_model', 'openai/gpt-5.6-terra');
+   localStorage.setItem(migrationKey, '1');
  }
 }
 const myRoomId = localStorage.getItem('lucid_roomId');
@@ -1044,6 +1048,7 @@ async function sendOpening() {
  })
  });
  const data = await res.json();
+ acceptAuthoritativeModel(data);
  removeTyping();
  appendMsg('ai', data.reply || '...');
  history.push({ role: 'assistant', content: data.reply || '...' });
@@ -1103,6 +1108,7 @@ async function send() {
  })
  });
  const data = await res.json();
+ acceptAuthoritativeModel(data);
  removeTyping();
  const reply = data.reply || '...';
  const suggestMoment = data.suggestMoment || false;
@@ -1123,7 +1129,7 @@ async function send() {
  }
  
  history.push({ role: 'assistant', content: reply });
- try { saveMemory('assistant', reply); } catch(e) { console.error('saveMemory error', e); }
+ try { saveMemory('assistant', reply, data.model_used, { model_source: data.model_source, provider_artifact: !!data.provider_artifact }); } catch(e) { console.error('saveMemory error', e); }
  try { triggerDevice(reply); } catch(e) { console.error('triggerDevice error', e); }
  try { maybeDropPhoto(reply); } catch(e) { console.error('maybeDropPhoto error', e); }
  try { if (companion?.id) catchupSummarize(companion.id); } catch(e) { console.error('maybeSummarize error', e); }
@@ -1545,7 +1551,7 @@ async function catchupSummarize(companionId) {
  } catch(e) { console.error('catchup summarize error', e); }
 }
 
-async function saveMemory(role, content) {
+async function saveMemory(role, content, servedModel = null, extraMetadata = {}) {
  if (!companion?.id) return;
  try {
  const row = {
@@ -1553,11 +1559,14 @@ async function saveMemory(role, content) {
  user_id: myUserId,
  type: 'message',
  content,
- metadata: { role, session_id: currentSessionId, room: room?.name || '' }
+ metadata: { role, session_id: currentSessionId, room: room?.name || '', ...extraMetadata }
  };
  // Record which model served the companion message (for initiative density analysis)
  if (role === 'assistant') {
- row.model_used = currentEnergyModel || localStorage.getItem('lucid_active_model') || null;
+ // Only the model reported by the server is authoritative. The local model is
+ // retained as a legacy fallback for non-chat messages.
+ row.model_used = servedModel || currentEnergyModel || localStorage.getItem('lucid_active_model') || null;
+ row.metadata.model_source = servedModel ? 'server' : 'client_fallback';
  }
  await fetch(`${SUPABASE_URL}/rest/v1/memories`, {
  method: 'POST',
@@ -2013,6 +2022,7 @@ async function sendVideoToOryn(transcript, frameDataUrl) {
  })
  });
  const data = await res.json();
+ acceptAuthoritativeModel(data);
  removeTyping();
  history.push({ role: 'user', content: transcript || '[Video note — she sent you a video]' });
  if (data.reply) {
@@ -2020,7 +2030,7 @@ async function sendVideoToOryn(transcript, frameDataUrl) {
  if (history.length > 40) history = history.slice(-40);
  appendMsg('ai', data.reply);
  saveMemory('user', transcript || '[Video note]');
- saveMemory('assistant', data.reply);
+ saveMemory('assistant', data.reply, data.model_used, { model_source: data.model_source, provider_artifact: !!data.provider_artifact });
  try { if (companion?.id) catchupSummarize(companion.id); } catch(e) {}
  }
  } catch (err) {
@@ -2061,6 +2071,7 @@ async function sendImageToJude(b64) {
  })
  });
  const data = await res.json();
+ acceptAuthoritativeModel(data);
  removeTyping();
  const photoIndicator = document.getElementById('photo-reading-indicator');
  if (photoIndicator) photoIndicator.remove();
@@ -2070,7 +2081,7 @@ async function sendImageToJude(b64) {
  if (history.length > 40) history = history.slice(-40);
  appendMsg('ai', data.reply);
  saveMemory('user', '[User sent a photo]');
- saveMemory('assistant', data.reply);
+ saveMemory('assistant', data.reply, data.model_used, { model_source: data.model_source, provider_artifact: !!data.provider_artifact });
  try { if (companion?.id) catchupSummarize(companion.id); } catch(e) {}
  }
  } catch(e) {
@@ -2565,6 +2576,14 @@ function tierAllows(userTier, modeTier) {
 
 let currentEnergyModel = localStorage.getItem('lucid_active_model') || 'anthropic/claude-haiku-4-5-20251001';
 
+function acceptAuthoritativeModel(data) {
+  if (!data?.model_used) return;
+  currentEnergyModel = data.model_used;
+  localStorage.setItem('lucid_active_model', data.model_used);
+  localStorage.setItem('lucid_user_model', data.model_used);
+  try { renderEnergyModes(); } catch (_) {}
+}
+
 function renderEnergyModes() {
   const container = document.getElementById('energy-mode-list');
   if (!container) return;
@@ -2953,12 +2972,13 @@ async function generateMoment() {
         })
       });
       const reactData = await reactRes.json();
+      acceptAuthoritativeModel(reactData);
       removeTyping();
       const reactReply = reactData.reply || '';
       if (reactReply) {
         appendMsg('ai', reactReply);
         history.push({ role: 'assistant', content: reactReply });
-        try { saveMemory('assistant', reactReply); } catch(e) {}
+        try { saveMemory('assistant', reactReply, reactData.model_used, { model_source: reactData.model_source, provider_artifact: !!reactData.provider_artifact }); } catch(e) {}
       }
     } catch (reactErr) {
       console.error('Moment reaction error:', reactErr);
