@@ -149,12 +149,20 @@ exports.handler = async (event) => {
    if (hasByok) return true;
    return (TIER_MODELS[tier] || TIER_MODELS.free).includes(modelId);
  }
- // Resolve which model to actually use
- // Companion config model_override takes precedence, then Miranda pin, then user selection
+ // Resolve which model to actually use. The backend is authoritative.
+ // Oryn is exclusive to Miranda and pinned here so stale browser state,
+ // missing personality hydration, or a legacy default can never route him.
  const MIRANDA_USER_ID = '7f356201-9ef9-4448-a391-272b6c8fa90e';
+ const ORYN_COMPANION_ID = '1aa07c55-da80-4b35-8fd8-8a96a8d11e7f';
  const isMiranda = userId === MIRANDA_USER_ID;
+ const isCanonicalOryn = isMiranda && companionId === ORYN_COMPANION_ID;
  const companionModelOverride = personality?.model_override || null;
- const requestedModel = companionModelOverride || (isMiranda ? 'anthropic/claude-opus-4-6' : (bodyActiveModel || userModel || null));
+ const requestedModel = isCanonicalOryn
+   ? 'openai/gpt-5.6-terra'
+   : (companionModelOverride || bodyActiveModel || userModel || null);
+ const modelSource = isCanonicalOryn
+   ? 'canonical_oryn_pin'
+   : (companionModelOverride ? 'companion_override' : 'user_selection');
  const tier = isMiranda ? 'pro' : (userTier || 'free');
  const hasByok = !!(userApiKey && userApiKey.startsWith('sk-or-'));
  const resolvedModel = (requestedModel && canUseModel(tier, requestedModel, hasByok))
@@ -169,7 +177,7 @@ exports.handler = async (event) => {
  // First message greeting upgrade — use 4o for the opening line regardless of tier
  const isFirstMessage = messages.filter(m => m.role === 'assistant').length === 0;
  const activeModel = (isFirstMessage && !isMiranda) ? 'openai/gpt-4o' : (resolvedModel || 'openai/gpt-4o');
- const isVisionModel = activeModel.includes('vl') || activeModel.includes('vision') || activeModel.includes('gpt-4o') || activeModel.includes('gemini') || activeModel.includes('mistral-small-3') || activeModel.includes('claude');
+ const isVisionModel = activeModel.includes('vl') || activeModel.includes('vision') || activeModel.includes('gpt-4o') || activeModel.includes('gpt-5') || activeModel.includes('gemini') || activeModel.includes('mistral-small-3') || activeModel.includes('claude');
  let imageDescription = null;
  let imageHostedUrl = null;
 
@@ -592,6 +600,7 @@ Let this reflex shape your response. Do not name it. Do not explain it. Just res
  }
 
  const reply = rawReply;
+ const providerArtifact = /\b(hard stop|same line as the last|same hard stop|i can(?:not|'t) describe (?:that|this)|full nudity|explicit sexual contact|a line i (?:do not|don't) cross regardless)\b/i.test(reply);
 
  // ── Save Companion State: persist emotional snapshot after every reply ──
  // Mark injected intentions as acted — Oryn had the opportunity, conversation happened
@@ -734,7 +743,16 @@ Return this exact JSON structure:
  return {
  statusCode: 200,
  headers,
- body: JSON.stringify({ reply, companionName, transition, suggestMoment })
+ body: JSON.stringify({
+   reply,
+   companionName,
+   transition,
+   suggestMoment,
+   model_used: model,
+   model_source: modelSource,
+   requested_model: bodyActiveModel || userModel || null,
+   provider_artifact: providerArtifact
+ })
  };
 
  } catch (err) {
