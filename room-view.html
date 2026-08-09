@@ -1376,7 +1376,6 @@ async function speakMsg(btn, text) {
  if (!res.ok) throw new Error('tts failed');
 
  const arrayBuffer = await res.arrayBuffer();
- const debugOut = document.getElementById('debugOutput');
  if (debugOut) {
  debugOut.textContent += `\nBytes received: ${arrayBuffer.byteLength}`;
  }
