@@ -158,7 +158,7 @@ exports.handler = async (event) => {
  const isCanonicalOryn = isMiranda && companionId === ORYN_COMPANION_ID;
  const companionModelOverride = personality?.model_override || null;
  const requestedModel = isCanonicalOryn
-   ? 'openai/gpt-5.6-terra'
+   ? 'anthropic/claude-sonnet-5'
    : (companionModelOverride || bodyActiveModel || userModel || null);
  const modelSource = isCanonicalOryn
    ? 'canonical_oryn_pin'
@@ -178,11 +178,15 @@ exports.handler = async (event) => {
  const isFirstMessage = messages.filter(m => m.role === 'assistant').length === 0;
  const activeModel = (isFirstMessage && !isMiranda) ? 'openai/gpt-4o' : (resolvedModel || 'openai/gpt-4o');
  const isVisionModel = activeModel.includes('vl') || activeModel.includes('vision') || activeModel.includes('gpt-4o') || activeModel.includes('gpt-5') || activeModel.includes('gemini') || activeModel.includes('mistral-small-3') || activeModel.includes('claude');
+ // Keep Oryn's voice and vision roles separate: GPT-4o sees, Sonnet 5 responds.
+ const useDedicatedVision = isCanonicalOryn;
  let imageDescription = null;
  let imageHostedUrl = null;
 
  if (imageBase64 && imageBase64.startsWith('data:image')) {
- if (isVisionModel) {
+ if (useDedicatedVision) {
+ imageDescription = await describeImageWithVision(imageBase64, userApiKey);
+ } else if (isVisionModel) {
  imageHostedUrl = imageBase64; // compressed base64, skip FAL upload
  } else {
  imageDescription = await describeImageWithVision(imageBase64, userApiKey);
@@ -1473,7 +1477,7 @@ async function describeImageWithVision(imageBase64, userApiKey) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-haiku-4-5',
+        model: 'openai/gpt-4o',
         messages: [{
           role: 'user',
           content: [
